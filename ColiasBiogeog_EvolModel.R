@@ -263,7 +263,7 @@ fc2000$group=paste(fc2000$X,"2000",sep="")
 fc2075$group=paste(fc2075$X,"2075",sep="")
 
 fc=rbind(fc2000,fc2075)
-fc2000$ldif= 
+fc$abs= abs[as.numeric(fc$abs)]
 
 fcmap = ggplot(fc, aes(x=abs, y=lambda, group=group, color=elev)) +facet_wrap(~year) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 #-------------------
@@ -306,7 +306,9 @@ fc$ecut= cut(fc$elev, breaks=3)
 
 fc1= ddply(fc, .(ecut,year,abs), summarize, lambda=mean(lambda,na.rm=TRUE))
 fc1$year= as.numeric(fc1$year)
-     
+
+fc1$abs= abs[as.numeric(fc1$abs)]     
+
 fcmap2 = ggplot(fc1, aes(x=abs, y=lambda, group= as.factor(year),color=year)) +facet_wrap(~ecut) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 
 #-------------------
