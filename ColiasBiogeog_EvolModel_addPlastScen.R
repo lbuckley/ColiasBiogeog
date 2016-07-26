@@ -76,9 +76,19 @@ for(yr.k in 1:length(years)) {
     #Extract temperatures
     Tp= pup.temps["Tpup",yr.k, , gen.k]
     
+    #--------------------------
+    #Fitness models
+    #Estimate fitness functions across cells
+    fit= array(unlist(apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2))$coefficients)), dim=c(3, nrow(pts.sel)) )
+    #Save model
+    fit.mod= apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2)) )
+    ## EXTRACT SUMMARY?:   fitr2 <- summary(lm.fitmod.yr)$r.squared
+    
+    #find maxima lambda
+    abs.max= as.vector(array(unlist(sapply(fit.mod, function(x) if(!is.null(x))a.fit$a[which.max(predict.lm(x, a.fit))] )), dim=c(1, nrow(pts.sel)) ) )
+    
     #-------------------------
     # LOOP PLASTICITY SCENARIOS
-    
     for(scen.k in 1:5){ #plast0evol0, plast1evol0, plast0evol1, plast1evol1, plast1evol1rnevol1
     
     if(scen.mat[scen.k,1]==1) rn.mean1= rep(slope_plast, nrow(pts.sel) )
@@ -97,22 +107,13 @@ for(yr.k in 1:length(years)) {
     #Add plasticity across sites and sample
     abs.plast <- abs.sample + rn.sample*(Tp-Tmid)
     #abs.mean[yr.k,,gen.k] <- abs.mean[yr.k,,gen.k]+abs.plast
-    
-    #Estimate fitness functions across cells
-    fit= array(unlist(apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2))$coefficients)), dim=c(3, nrow(pts.sel)) )
-    #Save model
-    fit.mod= apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2)) )
-    ## EXTRACT SUMMARY?:   fitr2 <- summary(lm.fitmod.yr)$r.squared
-   
-    #find maxima lambda
-    abs.max= as.vector(array(unlist(sapply(fit.mod, function(x) if(!is.null(x))a.fit$a[which.max(predict.lm(x, a.fit))] )), dim=c(1, nrow(pts.sel)) ) )
             
     ##calculate fitness
     #Choose random sample of abs values from current distribution (truncated normal) 
     #use fitness function to predict Lambda for each individual
     #extract coefficients and calculate across abs samples
     fit.sample= foreach(cell.k=1:nrow(pts.sel), .combine="cbind") %do% {
-      sapply(abs.sample[,cell.k], function(x) if( sum(is.na(fit[,cell.k]))==0) fit[1,cell.k]+x*fit[2,cell.k]+x^2*fit[3,cell.k] )
+      sapply(abs.plast[,cell.k], function(x) if( sum(is.na(fit[,cell.k]))==0) fit[1,cell.k]+x*fit[2,cell.k]+x^2*fit[3,cell.k] )
       } 
     #Fit.pred <- eval.fd(Abs.sample,Fitmod.year.gen) ### for spline
 
@@ -183,7 +184,7 @@ if(scen.k==5){
 }
 
 #Store other metrics
-abs.mean[yr.k,,gen.k,scen.k,"abssample"]= colMeans(abs.sample)
+abs.mean[yr.k,,gen.k,scen.k,"abssample"]= colMeans(abs.plast)
 abs.mean[yr.k,,gen.k,scen.k,"Babsmid"]= BetaAbsmid
 if(scen.k==5) abs.mean[yr.k,,gen.k,scen.k,"Brn"]= BetaRN
 
