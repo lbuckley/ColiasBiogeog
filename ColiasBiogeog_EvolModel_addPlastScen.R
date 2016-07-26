@@ -45,8 +45,8 @@ pup.temps <- readRDS("PupTemps.rds")
 
 #***************************************
 #compute initial AbsMean 
-int_elev = 0.4282; slope_elev = 0.064
-Tmid = 20; slope_plast = -0.083  #if Tmid=22.5, -0.006667;
+int_elev = 0.4226; slope_elev = 0.06517
+Tmid = 20; slope_plast = -0.0083  #if Tmid=22.5, -0.006667;
 
 elev_km= pts.sel$elev/1000
 #fill in missing elevations: http://www.inside-r.org/packages/cran/rgbif/docs/elevation
@@ -76,9 +76,19 @@ for(yr.k in 1:length(years)) {
     #Extract temperatures
     Tp= pup.temps["Tpup",yr.k, , gen.k]
     
+    #--------------------------
+    #Fitness models
+    #Estimate fitness functions across cells
+    fit= array(unlist(apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2))$coefficients)), dim=c(3, nrow(pts.sel)) )
+    #Save model
+    fit.mod= apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2)) )
+    ## EXTRACT SUMMARY?:   fitr2 <- summary(lm.fitmod.yr)$r.squared
+    
+    #find maxima lambda
+    abs.max= as.vector(array(unlist(sapply(fit.mod, function(x) if(!is.null(x))a.fit$a[which.max(predict.lm(x, a.fit))] )), dim=c(1, nrow(pts.sel)) ) )
+    
     #-------------------------
     # LOOP PLASTICITY SCENARIOS
-    
     for(scen.k in 1:5){ #plast0evol0, plast1evol0, plast0evol1, plast1evol1, plast1evol1rnevol1
     
     if(scen.mat[scen.k,1]==1) rn.mean1= rep(slope_plast, nrow(pts.sel) )
@@ -97,22 +107,13 @@ for(yr.k in 1:length(years)) {
     #Add plasticity across sites and sample
     abs.plast <- abs.sample + rn.sample*(Tp-Tmid)
     #abs.mean[yr.k,,gen.k] <- abs.mean[yr.k,,gen.k]+abs.plast
-    
-    #Estimate fitness functions across cells
-    fit= array(unlist(apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2))$coefficients)), dim=c(3, nrow(pts.sel)) )
-    #Save model
-    fit.mod= apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2)) )
-    ## EXTRACT SUMMARY?:   fitr2 <- summary(lm.fitmod.yr)$r.squared
-   
-    #find maxima lambda
-    abs.max= as.vector(array(unlist(sapply(fit.mod, function(x) if(!is.null(x))a.fit$a[which.max(predict.lm(x, a.fit))] )), dim=c(1, nrow(pts.sel)) ) )
             
     ##calculate fitness
     #Choose random sample of abs values from current distribution (truncated normal) 
     #use fitness function to predict Lambda for each individual
     #extract coefficients and calculate across abs samples
     fit.sample= foreach(cell.k=1:nrow(pts.sel), .combine="cbind") %do% {
-      sapply(abs.sample[,cell.k], function(x) if( sum(is.na(fit[,cell.k]))==0) fit[1,cell.k]+x*fit[2,cell.k]+x^2*fit[3,cell.k] )
+      sapply(abs.plast[,cell.k], function(x) if( sum(is.na(fit[,cell.k]))==0) fit[1,cell.k]+x*fit[2,cell.k]+x^2*fit[3,cell.k] )
       } 
     #Fit.pred <- eval.fd(Abs.sample,Fitmod.year.gen) ### for spline
 
@@ -124,7 +125,8 @@ for(yr.k in 1:length(years)) {
     absmid.dif= t( apply(abs.sample,1,'-',abs.mean1) )
     rn.dif= t( apply(rn.sample,1,'-',rn.mean1) )
 
-if(scen.k<5){    
+    R2selnAbsmid<- rep(0, nrow(pts.sel) )
+if(scen.k<5 & scen.mat[scen.k,2]==1){    
       ##selection analysis
       sel.fit= sapply(1:841, function(x) if(sum(is.na(x))==0) lm(rel.fit[,x]~absmid.dif[,x] +I(absmid.dif[,x]^2))$coefficients)
       
@@ -135,7 +137,6 @@ if(scen.k<5){
       #Response to selection
       BetaAbsmid <-sel.fit[2,]
       R2selnAbsmid <- h2*(abs.sd^2)*BetaAbsmid
-      
     } #end scen.k<5
 
 if(scen.k==5){    
@@ -183,7 +184,7 @@ if(scen.k==5){
 }
 
 #Store other metrics
-abs.mean[yr.k,,gen.k,scen.k,"abssample"]= colMeans(abs.sample)
+abs.mean[yr.k,,gen.k,scen.k,"abssample"]= colMeans(abs.plast)
 abs.mean[yr.k,,gen.k,scen.k,"Babsmid"]= BetaAbsmid
 if(scen.k==5) abs.mean[yr.k,,gen.k,scen.k,"Brn"]= BetaRN
 
@@ -224,7 +225,7 @@ scen.k=4
 inds=1:137
 
 for(scen.k in 1:5){
-abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"absmid"]) ) #plast and evol case
+abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"abssample"]) ) 
 abs.dat= gather(abs.all, "year", "abs",9:145)
 abs.dat$year= years[as.numeric(abs.dat$year)]
 
@@ -248,7 +249,7 @@ if(scen.k==5) {p.a5=p.abs; p.l5= p.lambda}
 #---------------
 
 setwd(paste(fdir,"figures\\",sep="") )
-pdf("LambdaAbs_year.pdf", height = 15, width = 6)
+pdf("LambdaAbs_year.pdf", height = 12, width = 6)
 
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(5,2)))
@@ -490,7 +491,7 @@ scen.k=5
 inds=1:137
 
   abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"rn"]) ) #plast and evol case
-  abs.dat= gather(abs.all, "year", "abs",9:145)
+  abs.dat= gather(abs.all, "year", "rn",9:145)
   abs.dat$year= years[as.numeric(abs.dat$year)]
   
   abs.dat$ecut= cut(abs.dat$elev, breaks=3)
@@ -516,7 +517,7 @@ inds=1:137
   #Selection on Absorptivities across time and elevations
   inds=1:137
   
-  for(scen.k in 1:5){
+  for(scen.k in 3:5){
     abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Babsmid"]) ) 
     abs.dat= gather(abs.all, "year", "Babs",9:145)
     abs.dat$year= years[as.numeric(abs.dat$year)]
@@ -534,8 +535,6 @@ inds=1:137
       p.rn = ggplot(abs.dat, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+facet_wrap(~ecut)
     }
     
-    if(scen.k==1) {p.a1=p.abs}
-    if(scen.k==2) {p.a2=p.abs}
     if(scen.k==3) {p.a3=p.abs}
     if(scen.k==4) {p.a4=p.abs}
     if(scen.k==5) {p.a5=p.abs}
@@ -545,18 +544,16 @@ inds=1:137
   #---------------
   
   setwd(paste(fdir,"figures\\",sep="") )
-  pdf("Babs_year.pdf", height = 11, width = 6)
+  pdf("Babs_year.pdf", height = 10, width = 10)
   
   grid.newpage()
-  pushViewport(viewport(layout=grid.layout(5,1)))
+  pushViewport(viewport(layout=grid.layout(3,1)))
   vplayout<-function(x,y)
     viewport(layout.pos.row=x,layout.pos.col=y)
   
-  print(p.a1,vp=vplayout(1,1))
-  print(p.a2,vp=vplayout(2,1))
-  print(p.a3,vp=vplayout(3,1))
-  print(p.a4,vp=vplayout(4,1))
-  print(p.a5,vp=vplayout(5,1))
+  print(p.a3,vp=vplayout(1,1))
+  print(p.a4,vp=vplayout(2,1))
+  print(p.a5,vp=vplayout(3,1))
 
   dev.off()
   
@@ -569,4 +566,5 @@ inds=1:137
   
   dev.off()
   
-  
+  #--------------
+ # plot(1:40, abs.mean[1:40,1,gen.k,5,"abssample"])
