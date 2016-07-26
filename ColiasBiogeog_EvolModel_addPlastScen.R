@@ -185,7 +185,7 @@ if(scen.k==5){
 #Store other metrics
 abs.mean[yr.k,,gen.k,scen.k,"abssample"]= colMeans(abs.sample)
 abs.mean[yr.k,,gen.k,scen.k,"Babsmid"]= BetaAbsmid
-abs.mean[yr.k,,gen.k,scen.k,"Brn"]= BetaRN
+if(scen.k==5) abs.mean[yr.k,,gen.k,scen.k,"Brn"]= BetaRN
 
 } #end scen loop
 
@@ -216,34 +216,55 @@ library(mapdata)
 library(colorRamps)     # for matlab.like(...)
 library(grid)
 
+#specify generation and scenario
+gen.k=1
+scen.k=4
+
 #Absorptivities across time and elevations
 inds=1:137
 
-abs.all= cbind(pts.sel, t(abs.mean[inds,,1]) )
+for(scen.k in 1:5){
+abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"absmid"]) ) #plast and evol case
 abs.dat= gather(abs.all, "year", "abs",9:145)
 abs.dat$year= years[as.numeric(abs.dat$year)]
 
 p.abs = ggplot(abs.dat, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 
 #Lambdas across time and elevations
-lambda.all= cbind(pts.sel, t(lambda.mean[inds,]) )
+lambda.all= cbind(pts.sel, t(lambda.mean[inds,,gen.k,scen.k]) )
 lambda.dat= gather(lambda.all, "year", "lambda",9:145)
 lambda.dat$year= years[as.numeric(lambda.dat$year)]
 
 p.lambda = ggplot(lambda.dat, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 
+if(scen.k==1) {p.a1=p.abs; p.l1= p.lambda}
+if(scen.k==2) {p.a2=p.abs; p.l2= p.lambda}
+if(scen.k==3) {p.a3=p.abs; p.l3= p.lambda}
+if(scen.k==4) {p.a4=p.abs; p.l4= p.lambda}
+if(scen.k==5) {p.a5=p.abs; p.l5= p.lambda}
+
+} #end scen loop
+
 #---------------
 
 setwd(paste(fdir,"figures\\",sep="") )
-pdf("LambdaAbs_year.pdf", height = 5, width = 10)
+pdf("LambdaAbs_year.pdf", height = 15, width = 6)
 
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(1,2)))
+pushViewport(viewport(layout=grid.layout(5,2)))
 vplayout<-function(x,y)
   viewport(layout.pos.row=x,layout.pos.col=y)
 
-print(p.abs,vp=vplayout(1,1))
-print(p.lambda,vp=vplayout(1,2))
+print(p.a1,vp=vplayout(1,1))
+print(p.l1,vp=vplayout(1,2))
+print(p.a2,vp=vplayout(2,1))
+print(p.l2,vp=vplayout(2,2))
+print(p.a3,vp=vplayout(3,1))
+print(p.l3,vp=vplayout(3,2))
+print(p.a4,vp=vplayout(4,1))
+print(p.l4,vp=vplayout(4,2))
+print(p.a5,vp=vplayout(5,1))
+print(p.l5,vp=vplayout(5,2))
 
 dev.off()
 
@@ -254,13 +275,14 @@ dev.off()
 #--------------------- 
 #MAP
 
-#----------
+for(scen.k in 1:5){
+  
 #Set up data
 lambda.all= pts.sel
-lambda.all$lambda2000= lambda.mean[which(years=='2000'),]
-lambda.all$lambda2075= lambda.mean[which(years=='2075'),]
-lambda.all$abs2000= abs.mean[which(years=='2000'),,2]
-lambda.all$abs2075= abs.mean[which(years=='2075'),,2]
+lambda.all$lambda2000= lambda.mean[which(years=='2000'),,gen.k,scen.k]
+lambda.all$lambda2075= lambda.mean[which(years=='2075'),,gen.k,scen.k]
+lambda.all$abs2000= abs.mean[which(years=='2000'),,gen.k,scen.k,"absmid"]
+lambda.all$abs2075= abs.mean[which(years=='2075'),,gen.k,scen.k,"absmid"]
 
 #LAMBDAS
 #MAP 2000
@@ -290,19 +312,54 @@ abs2000map<- map1 + geom_raster(data=dat2, aes(fill = abs2000), alpha=0.5)+ coor
 #MAP 2075
 abs2075map<- map1 + geom_raster(data=dat2, aes(fill = abs2075), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
 
+if(scen.k==1) {a2000.1=abs2000map; a2075.1=abs2075map; l2000.1=lambda2000map; l2075.1=lambda2075map;}
+if(scen.k==2) {a2000.2=abs2000map; a2075.2=abs2075map; l2000.2=lambda2000map; l2075.2=lambda2075map;}
+if(scen.k==3) {a2000.3=abs2000map; a2075.3=abs2075map; l2000.3=lambda2000map; l2075.3=lambda2075map;}
+if(scen.k==4) {a2000.4=abs2000map; a2075.4=abs2075map; l2000.4=lambda2000map; l2075.4=lambda2075map;}
+if(scen.k==5) {a2000.5=abs2000map; a2075.5=abs2075map; l2000.5=lambda2000map; l2075.5=lambda2075map;}
+
+} #end scen loop
+
 #-------------------
 setwd(paste(fdir,"figures\\",sep="") )
-pdf("LambdaAbs_map.pdf", height = 12, width = 15)
+pdf("Abs_map.pdf", height = 15, width = 8)
 
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(2,2)))
+pushViewport(viewport(layout=grid.layout(5,2)))
 vplayout<-function(x,y)
   viewport(layout.pos.row=x,layout.pos.col=y)
 
-print(abs2000map,vp=vplayout(1,1))
-print(abs2075map,vp=vplayout(1,2))
-print(lambda2000map,vp=vplayout(2,1))
-print(lambda2075map,vp=vplayout(2,2))
+print(a2000.1,vp=vplayout(1,1))
+print(a2075.1,vp=vplayout(1,2))
+print(a2000.2,vp=vplayout(2,1))
+print(a2075.2,vp=vplayout(2,2))
+print(a2000.3,vp=vplayout(3,1))
+print(a2075.3,vp=vplayout(3,2))
+print(a2000.4,vp=vplayout(4,1))
+print(a2075.4,vp=vplayout(4,2))
+print(a2000.5,vp=vplayout(5,1))
+print(a2075.5,vp=vplayout(5,2))
+
+dev.off()
+
+#-------------
+pdf("Lambda_map.pdf", height = 15, width = 8)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(5,2)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(l2000.1,vp=vplayout(1,1))
+print(l2075.1,vp=vplayout(1,2))
+print(l2000.2,vp=vplayout(2,1))
+print(l2075.2,vp=vplayout(2,2))
+print(l2000.3,vp=vplayout(3,1))
+print(l2075.3,vp=vplayout(3,2))
+print(l2000.4,vp=vplayout(4,1))
+print(l2075.4,vp=vplayout(4,2))
+print(l2000.5,vp=vplayout(5,1))
+print(l2075.5,vp=vplayout(5,2))
 
 dev.off()
 
@@ -425,4 +482,91 @@ print(p3,vp=vplayout(1,3))
 
 dev.off()
 
+#-----------------------------
+#EVOLUTION OF RN
 
+gen.k=1
+scen.k=5
+inds=1:137
+
+  abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"rn"]) ) #plast and evol case
+  abs.dat= gather(abs.all, "year", "abs",9:145)
+  abs.dat$year= years[as.numeric(abs.dat$year)]
+  
+  abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+  
+  p.rn = ggplot(abs.dat, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10)) +facet_wrap(~ecut)
+  
+  
+  #------------
+  setwd(paste(fdir,"figures\\",sep="") )
+  pdf("RNevol_byElev.pdf", height = 5, width = 15)
+  
+  print(p.rn)
+  
+  dev.off()
+
+  #------------------------
+  #FIG X. Selection gradients
+  
+  #specify generation and scenario
+  gen.k=1
+  scen.k=4
+  
+  #Selection on Absorptivities across time and elevations
+  inds=1:137
+  
+  for(scen.k in 1:5){
+    abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Babsmid"]) ) 
+    abs.dat= gather(abs.all, "year", "Babs",9:145)
+    abs.dat$year= years[as.numeric(abs.dat$year)]
+    abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+    
+    p.abs = ggplot(abs.dat, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+facet_wrap(~ecut)
+    
+  
+    if(scen.k==5){
+      abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Brn"]) ) 
+      abs.dat= gather(abs.all, "year", "Brn",9:145)
+      abs.dat$year= years[as.numeric(abs.dat$year)]
+      abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+      
+      p.rn = ggplot(abs.dat, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+facet_wrap(~ecut)
+    }
+    
+    if(scen.k==1) {p.a1=p.abs}
+    if(scen.k==2) {p.a2=p.abs}
+    if(scen.k==3) {p.a3=p.abs}
+    if(scen.k==4) {p.a4=p.abs}
+    if(scen.k==5) {p.a5=p.abs}
+    
+  } #end scen loop
+  
+  #---------------
+  
+  setwd(paste(fdir,"figures\\",sep="") )
+  pdf("Babs_year.pdf", height = 11, width = 6)
+  
+  grid.newpage()
+  pushViewport(viewport(layout=grid.layout(5,1)))
+  vplayout<-function(x,y)
+    viewport(layout.pos.row=x,layout.pos.col=y)
+  
+  print(p.a1,vp=vplayout(1,1))
+  print(p.a2,vp=vplayout(2,1))
+  print(p.a3,vp=vplayout(3,1))
+  print(p.a4,vp=vplayout(4,1))
+  print(p.a5,vp=vplayout(5,1))
+
+  dev.off()
+  
+  #--------------
+  
+  setwd(paste(fdir,"figures\\",sep="") )
+  pdf("Brn_year.pdf", height = 3, width = 6)
+  
+  plot(p.rn)
+  
+  dev.off()
+  
+  
