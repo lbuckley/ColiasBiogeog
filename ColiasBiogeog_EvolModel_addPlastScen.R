@@ -65,7 +65,7 @@ lambda.mean= array(NA, dim=c(length(years),nrow(pts.sel), 3, 5)) #dims: yr.k, ce
 scen.mat= rbind(c(0,0,0),c(1,0,0),c(0,1,0),c(1,1,0),c(1,1,1) )
 colnames(scen.mat)= c("plast","evol","evolRN"  )
 
-for(yr.k in 1:length(years)) {
+for(yr.k in 44:length(years)) {
   
   ##loop through generations in each year
   for(gen.k in 1:ngens) {
@@ -221,149 +221,6 @@ library(grid)
 gen.k=1
 scen.k=4
 
-#Absorptivities across time and elevations
-inds=1:137
-
-for(scen.k in 1:5){
-abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"abssample"]) ) 
-abs.dat= gather(abs.all, "year", "abs",9:145)
-abs.dat$year= years[as.numeric(abs.dat$year)]
-
-p.abs = ggplot(abs.dat, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
-
-#Lambdas across time and elevations
-lambda.all= cbind(pts.sel, t(lambda.mean[inds,,gen.k,scen.k]) )
-lambda.dat= gather(lambda.all, "year", "lambda",9:145)
-lambda.dat$year= years[as.numeric(lambda.dat$year)]
-
-p.lambda = ggplot(lambda.dat, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
-
-if(scen.k==1) {p.a1=p.abs; p.l1= p.lambda}
-if(scen.k==2) {p.a2=p.abs; p.l2= p.lambda}
-if(scen.k==3) {p.a3=p.abs; p.l3= p.lambda}
-if(scen.k==4) {p.a4=p.abs; p.l4= p.lambda}
-if(scen.k==5) {p.a5=p.abs; p.l5= p.lambda}
-
-} #end scen loop
-
-#---------------
-
-setwd(paste(fdir,"figures\\",sep="") )
-pdf("LambdaAbs_year.pdf", height = 12, width = 6)
-
-grid.newpage()
-pushViewport(viewport(layout=grid.layout(5,2)))
-vplayout<-function(x,y)
-  viewport(layout.pos.row=x,layout.pos.col=y)
-
-print(p.a1,vp=vplayout(1,1))
-print(p.l1,vp=vplayout(1,2))
-print(p.a2,vp=vplayout(2,1))
-print(p.l2,vp=vplayout(2,2))
-print(p.a3,vp=vplayout(3,1))
-print(p.l3,vp=vplayout(3,2))
-print(p.a4,vp=vplayout(4,1))
-print(p.l4,vp=vplayout(4,2))
-print(p.a5,vp=vplayout(5,1))
-print(p.l5,vp=vplayout(5,2))
-
-dev.off()
-
-#DO:
-#CALCULATE ABS SLOPE BY DECADE?
-#ASSUME START AT OPTIMAL ABS. TOO COLD?
-
-#--------------------- 
-#MAP
-
-for(scen.k in 1:5){
-  
-#Set up data
-lambda.all= pts.sel
-lambda.all$lambda2000= lambda.mean[which(years=='2000'),,gen.k,scen.k]
-lambda.all$lambda2075= lambda.mean[which(years=='2075'),,gen.k,scen.k]
-lambda.all$abs2000= abs.mean[which(years=='2000'),,gen.k,scen.k,"absmid"]
-lambda.all$abs2075= abs.mean[which(years=='2075'),,gen.k,scen.k,"absmid"]
-
-#LAMBDAS
-#MAP 2000
-#subset to lambda>1
-dat2= subset(lambda.all, lambda.all$lambda2000>1)
-
-#set up map
-bbox <- ggmap::make_bbox(lon, lat, dat2, f = 0.1)
-map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
-map1=ggmap(map_loc, margins=FALSE)
-
-lambda2000map<- map1 + geom_raster(data=dat2, aes(fill = lambda2000), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
-
-#MAP 2075
-#subset to lambda>1
-dat2= subset(lambda.all, lambda.all$lambda2075>1)
-
-lambda2075map<- map1 + geom_raster(data=dat2, aes(fill = lambda2075), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
-#----------
-#ABSORPTIVITIES
-
-dat2=lambda.all
-
-#MAP 2000
-abs2000map<- map1 + geom_raster(data=dat2, aes(fill = abs2000), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
-
-#MAP 2075
-abs2075map<- map1 + geom_raster(data=dat2, aes(fill = abs2075), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
-
-if(scen.k==1) {a2000.1=abs2000map; a2075.1=abs2075map; l2000.1=lambda2000map; l2075.1=lambda2075map;}
-if(scen.k==2) {a2000.2=abs2000map; a2075.2=abs2075map; l2000.2=lambda2000map; l2075.2=lambda2075map;}
-if(scen.k==3) {a2000.3=abs2000map; a2075.3=abs2075map; l2000.3=lambda2000map; l2075.3=lambda2075map;}
-if(scen.k==4) {a2000.4=abs2000map; a2075.4=abs2075map; l2000.4=lambda2000map; l2075.4=lambda2075map;}
-if(scen.k==5) {a2000.5=abs2000map; a2075.5=abs2075map; l2000.5=lambda2000map; l2075.5=lambda2075map;}
-
-} #end scen loop
-
-#-------------------
-setwd(paste(fdir,"figures\\",sep="") )
-pdf("Abs_map.pdf", height = 15, width = 8)
-
-grid.newpage()
-pushViewport(viewport(layout=grid.layout(5,2)))
-vplayout<-function(x,y)
-  viewport(layout.pos.row=x,layout.pos.col=y)
-
-print(a2000.1,vp=vplayout(1,1))
-print(a2075.1,vp=vplayout(1,2))
-print(a2000.2,vp=vplayout(2,1))
-print(a2075.2,vp=vplayout(2,2))
-print(a2000.3,vp=vplayout(3,1))
-print(a2075.3,vp=vplayout(3,2))
-print(a2000.4,vp=vplayout(4,1))
-print(a2075.4,vp=vplayout(4,2))
-print(a2000.5,vp=vplayout(5,1))
-print(a2075.5,vp=vplayout(5,2))
-
-dev.off()
-
-#-------------
-pdf("Lambda_map.pdf", height = 15, width = 8)
-
-grid.newpage()
-pushViewport(viewport(layout=grid.layout(5,2)))
-vplayout<-function(x,y)
-  viewport(layout.pos.row=x,layout.pos.col=y)
-
-print(l2000.1,vp=vplayout(1,1))
-print(l2075.1,vp=vplayout(1,2))
-print(l2000.2,vp=vplayout(2,1))
-print(l2075.2,vp=vplayout(2,2))
-print(l2000.3,vp=vplayout(3,1))
-print(l2075.3,vp=vplayout(3,2))
-print(l2000.4,vp=vplayout(4,1))
-print(l2075.4,vp=vplayout(4,2))
-print(l2000.5,vp=vplayout(5,1))
-print(l2075.5,vp=vplayout(5,2))
-
-dev.off()
-
 #=====================================================
 #Fig X. PLOT FITNESS CURVES
 #Lambda[years, sites, abs, gen, metrics: Lambda, FAT,Egg Viability]
@@ -451,37 +308,209 @@ dev.off()
 phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) )
 phen= gather(phen, "year", "Jadult",9:145)
 phen$year= years[as.numeric(phen$year)]
+p11 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 
-p1 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,2]) )
+phen= gather(phen, "year", "Jadult",9:145)
+phen$year= years[as.numeric(phen$year)]
+p12 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+
+phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,3]) )
+phen= gather(phen, "year", "Jadult",9:145)
+phen$year= years[as.numeric(phen$year)]
+p13 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 
 #Tpupal
 phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) )
 phen= gather(phen, "year", "Tpup",9:145)
 phen$year= years[as.numeric(phen$year)]
+p21 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 
-p2 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,2]) )
+phen= gather(phen, "year", "Tpup",9:145)
+phen$year= years[as.numeric(phen$year)]
+p22 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+
+phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,3]) )
+phen= gather(phen, "year", "Tpup",9:145)
+phen$year= years[as.numeric(phen$year)]
+p23 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 
 #Tadult
 phen= cbind(pts.sel, t(pup.temps["Tad",inds,,1]) )
 phen= gather(phen, "year", "Tad",9:145)
 phen$year= years[as.numeric(phen$year)]
+p31 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 
-p3 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+phen= cbind(pts.sel, t(pup.temps["Tad",inds,,2]) )
+phen= gather(phen, "year", "Tad",9:145)
+phen$year= years[as.numeric(phen$year)]
+p32 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+
+phen= cbind(pts.sel, t(pup.temps["Tad",inds,,3]) )
+phen= gather(phen, "year", "Tad",9:145)
+phen$year= years[as.numeric(phen$year)]
+p33 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 #---------------
 
 setwd(paste(fdir,"figures\\",sep="") )
-pdf("PhenTemp_year.pdf", height = 5, width = 15)
+pdf("PhenTemp_year.pdf", height = 12, width = 12)
 
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(1,3)))
+pushViewport(viewport(layout=grid.layout(3,3)))
 vplayout<-function(x,y)
   viewport(layout.pos.row=x,layout.pos.col=y)
 
-print(p1,vp=vplayout(1,1))
-print(p2,vp=vplayout(1,2))
-print(p3,vp=vplayout(1,3))
+print(p11,vp=vplayout(1,1))
+print(p12,vp=vplayout(1,2))
+print(p13,vp=vplayout(1,3))
+print(p21,vp=vplayout(2,1))
+print(p22,vp=vplayout(2,2))
+print(p23,vp=vplayout(2,3))
+print(p31,vp=vplayout(3,1))
+print(p32,vp=vplayout(3,2))
+print(p33,vp=vplayout(3,3))
 
 dev.off()
+#==================================
+
+#Absorptivities across time and elevations
+inds=1:137
+
+for(scen.k in 1:5){
+gen.k=1
+abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"abssample"]) ) 
+abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat$year= years[as.numeric(abs.dat$year)]
+abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+abs.agg1= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+abs.dat1= abs.dat
+
+gen.k=2
+abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"abssample"]) ) 
+abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat$year= years[as.numeric(abs.dat$year)]
+abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+abs.agg2= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+abs.dat2= abs.dat
+
+gen.k=3
+abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"abssample"]) ) 
+abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat$year= years[as.numeric(abs.dat$year)]
+abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+abs.agg3= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+abs.dat3= abs.dat
+
+#p.abs1 = ggplot(abs.dat1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+#p.abs2 = ggplot(abs.dat2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+#p.abs3 = ggplot(abs.dat3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+
+p.abs1 = ggplot(abs.agg1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+p.abs2 = ggplot(abs.agg2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+p.abs3 = ggplot(abs.agg3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+
+#Lambdas across time and elevations
+gen.k=1
+lambda.all= cbind(pts.sel, t(lambda.mean[inds,,gen.k,scen.k]) )
+lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+lambda.dat$year= years[as.numeric(lambda.dat$year)]
+lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
+lambda.agg1= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+lambda.dat1= lambda.dat
+
+gen.k=2
+lambda.all= cbind(pts.sel, t(lambda.mean[inds,,gen.k,scen.k]) )
+lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+lambda.dat$year= years[as.numeric(lambda.dat$year)]
+lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
+lambda.agg2= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+lambda.dat2= lambda.dat
+
+gen.k=3
+lambda.all= cbind(pts.sel, t(lambda.mean[inds,,gen.k,scen.k]) )
+lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+lambda.dat$year= years[as.numeric(lambda.dat$year)]
+lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
+lambda.agg3= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+lambda.dat3= lambda.dat
+
+#p.lambda1 = ggplot(lambda.dat1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+#p.lambda2 = ggplot(lambda.dat2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+#p.lambda3 = ggplot(lambda.dat3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+
+p.lambda1 = ggplot(lambda.agg1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p.lambda2 = ggplot(lambda.agg2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p.lambda3 = ggplot(lambda.agg3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+
+if(scen.k==1) {p.a11=p.abs1; p.l11= p.lambda1; p.a12=p.abs2; p.l12= p.lambda2; p.a13=p.abs3; p.l13= p.lambda3}
+if(scen.k==2) {p.a21=p.abs1; p.l21= p.lambda1; p.a22=p.abs2; p.l22= p.lambda2; p.a23=p.abs3; p.l23= p.lambda3}
+if(scen.k==3) {p.a31=p.abs1; p.l31= p.lambda1; p.a32=p.abs2; p.l32= p.lambda2; p.a33=p.abs3; p.l33= p.lambda3}
+if(scen.k==4) {p.a41=p.abs1; p.l41= p.lambda1; p.a42=p.abs2; p.l42= p.lambda2; p.a43=p.abs3; p.l43= p.lambda3}
+if(scen.k==5) {p.a51=p.abs1; p.l51= p.lambda1; p.a52=p.abs2; p.l52= p.lambda2; p.a53=p.abs3; p.l53= p.lambda3}
+
+} #end scen loop
+
+#-----------------------
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Abs_year.pdf", height = 12, width = 12)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(5,3)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(p.a11,vp=vplayout(1,1))
+print(p.a21,vp=vplayout(2,1))
+print(p.a31,vp=vplayout(3,1))
+print(p.a41,vp=vplayout(4,1))
+print(p.a51,vp=vplayout(5,1))
+
+print(p.a12,vp=vplayout(1,2))
+print(p.a22,vp=vplayout(2,2))
+print(p.a32,vp=vplayout(3,2))
+print(p.a42,vp=vplayout(4,2))
+print(p.a52,vp=vplayout(5,2))
+
+print(p.a13,vp=vplayout(1,3))
+print(p.a23,vp=vplayout(2,3))
+print(p.a33,vp=vplayout(3,3))
+print(p.a43,vp=vplayout(4,3))
+print(p.a53,vp=vplayout(5,3))
+
+dev.off()
+#-----------------------
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Lambda_year.pdf", height = 12, width = 12)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(5,3)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(p.l11,vp=vplayout(1,1))
+print(p.l21,vp=vplayout(2,1))
+print(p.l31,vp=vplayout(3,1))
+print(p.l41,vp=vplayout(4,1))
+print(p.l51,vp=vplayout(5,1))
+
+print(p.l12,vp=vplayout(1,2))
+print(p.l22,vp=vplayout(2,2))
+print(p.l32,vp=vplayout(3,2))
+print(p.l42,vp=vplayout(4,2))
+print(p.l52,vp=vplayout(5,2))
+
+print(p.l13,vp=vplayout(1,3))
+print(p.l23,vp=vplayout(2,3))
+print(p.l33,vp=vplayout(3,3))
+print(p.l43,vp=vplayout(4,3))
+print(p.l53,vp=vplayout(5,3))
+
+dev.off()
+
+#DO:
+#CALCULATE ABS SLOPE BY DECADE?
+#ASSUME START AT OPTIMAL ABS. TOO COLD?
 
 #-----------------------------
 #EVOLUTION OF RN
@@ -489,24 +518,7 @@ dev.off()
 gen.k=1
 scen.k=5
 inds=1:137
-
-  abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"rn"]) ) #plast and evol case
-  abs.dat= gather(abs.all, "year", "rn",9:145)
-  abs.dat$year= years[as.numeric(abs.dat$year)]
-  
-  abs.dat$ecut= cut(abs.dat$elev, breaks=3)
-  
-  p.rn = ggplot(abs.dat, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10)) +facet_wrap(~ecut)
-  
-  
-  #------------
-  setwd(paste(fdir,"figures\\",sep="") )
-  pdf("RNevol_byElev.pdf", height = 5, width = 15)
-  
-  print(p.rn)
-  
-  dev.off()
-
+ 
   #------------------------
   #FIG X. Selection gradients
   
@@ -518,53 +530,205 @@ inds=1:137
   inds=1:137
   
   for(scen.k in 3:5){
+    gen.k=1
     abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Babsmid"]) ) 
     abs.dat= gather(abs.all, "year", "Babs",9:145)
     abs.dat$year= years[as.numeric(abs.dat$year)]
     abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+    abs.agg1= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+    abs.dat1= abs.dat
     
-    p.abs = ggplot(abs.dat, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+facet_wrap(~ecut)
+    gen.k=2
+    abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Babsmid"]) ) 
+    abs.dat= gather(abs.all, "year", "Babs",9:145)
+    abs.dat$year= years[as.numeric(abs.dat$year)]
+    abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+    abs.agg2= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+    abs.dat2= abs.dat
     
+    gen.k=3
+    abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Babsmid"]) ) 
+    abs.dat= gather(abs.all, "year", "Babs",9:145)
+    abs.dat$year= years[as.numeric(abs.dat$year)]
+    abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+    abs.agg3= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+    abs.dat3= abs.dat
+    
+    # p.abs1 = ggplot(abs.dat1, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10)) #+facet_wrap(~ecut)
+    # p.abs2 = ggplot(abs.dat2, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+    # p.abs3 = ggplot(abs.dat3, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
   
+    #ave by elevation   
+    p.abs1 = ggplot(abs.agg1, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+    p.abs2 = ggplot(abs.agg2, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+    p.abs3 = ggplot(abs.agg3, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+    
     if(scen.k==5){
+      gen.k=1
       abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Brn"]) ) 
       abs.dat= gather(abs.all, "year", "Brn",9:145)
       abs.dat$year= years[as.numeric(abs.dat$year)]
       abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+      abs.agg1= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+      abs.dat1= abs.dat
       
-      p.rn = ggplot(abs.dat, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+facet_wrap(~ecut)
-    }
+      gen.k=2
+      abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Brn"]) ) 
+      abs.dat= gather(abs.all, "year", "Brn",9:145)
+      abs.dat$year= years[as.numeric(abs.dat$year)]
+      abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+      abs.agg2= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+      abs.dat2= abs.dat
+      
+      gen.k=3
+      abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Brn"]) ) 
+      abs.dat= gather(abs.all, "year", "Brn",9:145)
+      abs.dat$year= years[as.numeric(abs.dat$year)]
+      abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+      abs.agg3= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+      abs.dat3= abs.dat
+      
+      # p.rn1 = ggplot(abs.dat1, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+      # p.rn2 = ggplot(abs.dat2, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+      # p.rn3 = ggplot(abs.dat3, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
     
-    if(scen.k==3) {p.a3=p.abs}
-    if(scen.k==4) {p.a4=p.abs}
-    if(scen.k==5) {p.a5=p.abs}
+      #ave by elev
+      p.rn1 = ggplot(abs.agg1, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+      p.rn2 = ggplot(abs.agg2, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+      p.rn3 = ggplot(abs.agg3, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+      }
+    
+    if(scen.k==3) {p.a31=p.abs1; p.a32=p.abs2; p.a33=p.abs3}
+    if(scen.k==4) {p.a41=p.abs1; p.a42=p.abs2; p.a43=p.abs3}
+    if(scen.k==5) {p.a51=p.abs1; p.a52=p.abs2; p.a53=p.abs3}
     
   } #end scen loop
   
   #---------------
   
   setwd(paste(fdir,"figures\\",sep="") )
-  pdf("Babs_year.pdf", height = 10, width = 10)
+  pdf("Babs_year.pdf", height = 10, width = 12)
   
   grid.newpage()
-  pushViewport(viewport(layout=grid.layout(3,1)))
+  pushViewport(viewport(layout=grid.layout(3,3)))
   vplayout<-function(x,y)
     viewport(layout.pos.row=x,layout.pos.col=y)
   
-  print(p.a3,vp=vplayout(1,1))
-  print(p.a4,vp=vplayout(2,1))
-  print(p.a5,vp=vplayout(3,1))
+  print(p.a31,vp=vplayout(1,1))
+  print(p.a41,vp=vplayout(2,1))
+  print(p.a51,vp=vplayout(3,1))
+  print(p.a32,vp=vplayout(1,2))
+  print(p.a42,vp=vplayout(2,2))
+  print(p.a52,vp=vplayout(3,2))
+  print(p.a33,vp=vplayout(1,3))
+  print(p.a43,vp=vplayout(2,3))
+  print(p.a53,vp=vplayout(3,3))
 
   dev.off()
   
   #--------------
   
   setwd(paste(fdir,"figures\\",sep="") )
-  pdf("Brn_year.pdf", height = 3, width = 6)
+  pdf("Brn_year.pdf", height = 3, width = 12)
+  grid.newpage()
+  pushViewport(viewport(layout=grid.layout(1,3)))
+  vplayout<-function(x,y)
+    viewport(layout.pos.row=x,layout.pos.col=y)
   
-  plot(p.rn)
+  print(p.rn1,vp=vplayout(1,1))
+  print(p.rn2,vp=vplayout(1,2))
+  print(p.rn3,vp=vplayout(1,3))
   
   dev.off()
   
-  #--------------
- # plot(1:40, abs.mean[1:40,1,gen.k,5,"abssample"])
+  #==============================
+  #MAP
+  
+  for(scen.k in 1:5){
+    
+    #Set up data
+    lambda.all= pts.sel
+    lambda.all$lambda2000= lambda.mean[which(years=='2000'),,gen.k,scen.k]
+    lambda.all$lambda2075= lambda.mean[which(years=='2075'),,gen.k,scen.k]
+    lambda.all$abs2000= abs.mean[which(years=='2000'),,gen.k,scen.k,"absmid"]
+    lambda.all$abs2075= abs.mean[which(years=='2075'),,gen.k,scen.k,"absmid"]
+    
+    #LAMBDAS
+    #MAP 2000
+    #subset to lambda>1
+    dat2= subset(lambda.all, lambda.all$lambda2000>1)
+    
+    #set up map
+    bbox <- ggmap::make_bbox(lon, lat, dat2, f = 0.1)
+    map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
+    map1=ggmap(map_loc, margins=FALSE)
+    
+    lambda2000map<- map1 + geom_raster(data=dat2, aes(fill = lambda2000), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+    
+    #MAP 2075
+    #subset to lambda>1
+    dat2= subset(lambda.all, lambda.all$lambda2075>1)
+    
+    lambda2075map<- map1 + geom_raster(data=dat2, aes(fill = lambda2075), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+    #----------
+    #ABSORPTIVITIES
+    
+    dat2=lambda.all
+    
+    #MAP 2000
+    abs2000map<- map1 + geom_raster(data=dat2, aes(fill = abs2000), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+    
+    #MAP 2075
+    abs2075map<- map1 + geom_raster(data=dat2, aes(fill = abs2075), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+    
+    if(scen.k==1) {a2000.1=abs2000map; a2075.1=abs2075map; l2000.1=lambda2000map; l2075.1=lambda2075map;}
+    if(scen.k==2) {a2000.2=abs2000map; a2075.2=abs2075map; l2000.2=lambda2000map; l2075.2=lambda2075map;}
+    if(scen.k==3) {a2000.3=abs2000map; a2075.3=abs2075map; l2000.3=lambda2000map; l2075.3=lambda2075map;}
+    if(scen.k==4) {a2000.4=abs2000map; a2075.4=abs2075map; l2000.4=lambda2000map; l2075.4=lambda2075map;}
+    if(scen.k==5) {a2000.5=abs2000map; a2075.5=abs2075map; l2000.5=lambda2000map; l2075.5=lambda2075map;}
+    
+  } #end scen loop
+  
+  #-------------------
+  setwd(paste(fdir,"figures\\",sep="") )
+  pdf("Abs_map.pdf", height = 15, width = 8)
+  
+  grid.newpage()
+  pushViewport(viewport(layout=grid.layout(5,2)))
+  vplayout<-function(x,y)
+    viewport(layout.pos.row=x,layout.pos.col=y)
+  
+  print(a2000.1,vp=vplayout(1,1))
+  print(a2075.1,vp=vplayout(1,2))
+  print(a2000.2,vp=vplayout(2,1))
+  print(a2075.2,vp=vplayout(2,2))
+  print(a2000.3,vp=vplayout(3,1))
+  print(a2075.3,vp=vplayout(3,2))
+  print(a2000.4,vp=vplayout(4,1))
+  print(a2075.4,vp=vplayout(4,2))
+  print(a2000.5,vp=vplayout(5,1))
+  print(a2075.5,vp=vplayout(5,2))
+  
+  dev.off()
+  
+  #-------------
+  pdf("Lambda_map.pdf", height = 15, width = 8)
+  
+  grid.newpage()
+  pushViewport(viewport(layout=grid.layout(5,2)))
+  vplayout<-function(x,y)
+    viewport(layout.pos.row=x,layout.pos.col=y)
+  
+  print(l2000.1,vp=vplayout(1,1))
+  print(l2075.1,vp=vplayout(1,2))
+  print(l2000.2,vp=vplayout(2,1))
+  print(l2075.2,vp=vplayout(2,2))
+  print(l2000.3,vp=vplayout(3,1))
+  print(l2075.3,vp=vplayout(3,2))
+  print(l2000.4,vp=vplayout(4,1))
+  print(l2075.4,vp=vplayout(4,2))
+  print(l2000.5,vp=vplayout(5,1))
+  print(l2075.5,vp=vplayout(5,2))
+  
+  dev.off()
+  
