@@ -1,5 +1,5 @@
  #Evolutionary Model across biogeography
-
+library(msm)
 library(foreach)
     
 fdir= "C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\"
@@ -65,7 +65,7 @@ lambda.mean= array(NA, dim=c(length(years),nrow(pts.sel), 3, 5)) #dims: yr.k, ce
 scen.mat= rbind(c(0,0,0),c(1,0,0),c(0,1,0),c(1,1,0),c(1,1,1) )
 colnames(scen.mat)= c("plast","evol","evolRN"  )
 
-for(yr.k in 44:length(years)) {
+for(yr.k in 1:length(years)) {
   
   ##loop through generations in each year
   for(gen.k in 1:ngens) {
@@ -204,6 +204,9 @@ setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 #saveRDS(abs.mean, "absmean.abs")
 #saveRDS(lambda.mean, "lambdamean.abs")
 
+abs.mean <- readRDS("absmean.abs")
+lambda.mean <- readRDS("lambdamean.abs")
+
 #=====================================================
 ##  PLOT OUT
 library(ggplot2)
@@ -308,49 +311,49 @@ dev.off()
 phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) )
 phen= gather(phen, "year", "Jadult",9:145)
 phen$year= years[as.numeric(phen$year)]
-p11 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p11 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(125,275)
 
 phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,2]) )
 phen= gather(phen, "year", "Jadult",9:145)
 phen$year= years[as.numeric(phen$year)]
-p12 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p12 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(125,275)
 
 phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,3]) )
 phen= gather(phen, "year", "Jadult",9:145)
 phen$year= years[as.numeric(phen$year)]
-p13 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p13 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(125,275)
 
 #Tpupal
 phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) )
 phen= gather(phen, "year", "Tpup",9:145)
 phen$year= years[as.numeric(phen$year)]
-p21 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p21 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 
 phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,2]) )
 phen= gather(phen, "year", "Tpup",9:145)
 phen$year= years[as.numeric(phen$year)]
-p22 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p22 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 
 phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,3]) )
 phen= gather(phen, "year", "Tpup",9:145)
 phen$year= years[as.numeric(phen$year)]
-p23 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p23 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 
 #Tadult
 phen= cbind(pts.sel, t(pup.temps["Tad",inds,,1]) )
 phen= gather(phen, "year", "Tad",9:145)
 phen$year= years[as.numeric(phen$year)]
-p31 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p31 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 
 phen= cbind(pts.sel, t(pup.temps["Tad",inds,,2]) )
 phen= gather(phen, "year", "Tad",9:145)
 phen$year= years[as.numeric(phen$year)]
-p32 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p32 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 
 phen= cbind(pts.sel, t(pup.temps["Tad",inds,,3]) )
 phen= gather(phen, "year", "Tad",9:145)
 phen$year= years[as.numeric(phen$year)]
-p33 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p33 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 #---------------
 
 setwd(paste(fdir,"figures\\",sep="") )
@@ -731,4 +734,86 @@ inds=1:137
   print(l2075.5,vp=vplayout(5,2))
   
   dev.off()
+  
+  #==============================================
+  #Plot optimal scenarios
+  
+  #Lambda[years, sites, abs, gen, metrics: Lambda, FAT,Egg Viability]
+  abs.opt= array(NA, dim=c(length(years),nrow(pts.sel), 3))  
+  
+  for(yr.k in 1:length(years)) {
+    
+    ##loop through generations in each year
+    for(gen.k in 1:ngens) {
+      
+      Lambda.yr.gen= Lambda[yr.k, , , gen.k, ]
+      
+      #if(!is.na(Lambda.yr.gen)){ #FIX TO DEAL WITH NAs
+      #Extract temperatures
+      Tp= pup.temps["Tpup",yr.k, , gen.k]
+      
+      #--------------------------
+      #Fitness models
+      #Estimate fitness functions across cells
+      fit= array(unlist(apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2))$coefficients)), dim=c(3, nrow(pts.sel)) )
+      #Save model
+      fit.mod= apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2)) )
+      ## EXTRACT SUMMARY?:   fitr2 <- summary(lm.fitmod.yr)$r.squared
+      
+      #find maxima lambda
+      abs.opt[yr.k,,gen.k]= as.vector(array(unlist(sapply(fit.mod, function(x) if(!is.null(x))a.fit$a[which.max(predict.lm(x, a.fit))] )), dim=c(1, nrow(pts.sel)) ) )
+  
+    } #end gen loop
+  } #end year loop
+
+  #------------------------------  
+#plot optimal
+   
+  inds=1:137
+  
+  gen.k=1
+  lambda.all= cbind(pts.sel, t(abs.opt[inds,,gen.k]) )
+  lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+  lambda.dat$year= years[as.numeric(lambda.dat$year)]
+  lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
+  lambda.agg1= aggregate(lambda.dat, list(lambda.dat$year,lambda.dat$ecut), FUN=mean)
+  lambda.dat1= lambda.dat
+  
+  gen.k=2
+  lambda.all= cbind(pts.sel, t(abs.opt[inds,,gen.k]) )
+  lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+  lambda.dat$year= years[as.numeric(lambda.dat$year)]
+  lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
+  lambda.agg2= aggregate(lambda.dat, list(lambda.dat$year,lambda.dat$ecut), FUN=mean)
+  lambda.dat2= lambda.dat
+  
+  gen.k=3
+  lambda.all= cbind(pts.sel, t(abs.opt[inds,,gen.k]) )
+  lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+  lambda.dat$year= years[as.numeric(lambda.dat$year)]
+  lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
+  lambda.agg3= aggregate(lambda.dat, list(lambda.dat$year,lambda.dat$ecut), FUN=mean)
+  lambda.dat3= lambda.dat
+  
+  p.lambda1 = ggplot(lambda.agg1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+  p.lambda2 = ggplot(lambda.agg2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+  p.lambda3 = ggplot(lambda.agg3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+  
+  #-------------
+  setwd(paste(fdir,"figures\\",sep="") )
+  pdf("Abs_opt.pdf", height = 6, width = 12)
+  
+  grid.newpage()
+  pushViewport(viewport(layout=grid.layout(1,3)))
+  vplayout<-function(x,y)
+    viewport(layout.pos.row=x,layout.pos.col=y)
+  
+  print(p.lambda1,vp=vplayout(1,1))
+  print(p.lambda2,vp=vplayout(1,2))
+  print(p.lambda3,vp=vplayout(1,3))
+  
+  dev.off()
+  
+  
+  
   
