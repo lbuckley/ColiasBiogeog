@@ -1,4 +1,4 @@
- #Evolutionary Model across biogeography
+#Evolutionary Model across biogeography
 library(msm)
 library(foreach)
     
@@ -21,6 +21,8 @@ h2= 0.4
 abs.mean=0.55; #UPDATE
 abs.sd= 0.062
 rn.sd= 0.0083
+
+inds=1:137
 #-------------------------------
 #EVO MODEL
 N.ind=1000
@@ -766,8 +768,15 @@ inds=1:137
     } #end gen loop
   } #end year loop
 
+  #save optimal Alphas
+  setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+  
+  #saveRDS(abs.opt, "abs.opt")
+  
+  abs.opt <- readRDS("abs.opt")
+  
   #------------------------------  
-#plot optimal
+#plot optimal across generation
    
   inds=1:137
   
@@ -795,9 +804,9 @@ inds=1:137
   lambda.agg3= aggregate(lambda.dat, list(lambda.dat$year,lambda.dat$ecut), FUN=mean)
   lambda.dat3= lambda.dat
   
-  p.lambda1 = ggplot(lambda.agg1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
-  p.lambda2 = ggplot(lambda.agg2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
-  p.lambda3 = ggplot(lambda.agg3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+  p.lambda1 = ggplot(lambda.agg1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
+  p.lambda2 = ggplot(lambda.agg2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
+  p.lambda3 = ggplot(lambda.agg3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
   
   #-------------
   setwd(paste(fdir,"figures\\",sep="") )
@@ -814,6 +823,27 @@ inds=1:137
   
   dev.off()
   
+  #----------------------------
+  #PLOT ALL ELEVATIONs
   
+  p.lambda1 = ggplot(lambda.dat1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
+  p.lambda2 = ggplot(lambda.dat2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
+  p.lambda3 = ggplot(lambda.dat3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
+   
+  #-------------
+  setwd(paste(fdir,"figures\\",sep="") )
+  pdf("Abs_opt_allElevs.pdf", height = 6, width = 12)
   
+  grid.newpage()
+  pushViewport(viewport(layout=grid.layout(1,3)))
+  vplayout<-function(x,y)
+    viewport(layout.pos.row=x,layout.pos.col=y)
   
+  print(p.lambda1,vp=vplayout(1,1))
+  print(p.lambda2,vp=vplayout(1,2))
+  print(p.lambda3,vp=vplayout(1,3))
+  
+  dev.off()
+  
+  #-----------------------------
+  #### START SIMULATION AT OPTIMAL ALPHA
