@@ -565,9 +565,60 @@ write.csv(pts.sel, "COpoints.csv")
 plot(seq(0.4,0.7,0.05), Lambda[1, 10, , 1, 1])
 plot(seq(0.4,0.7,0.05), Lambda[1, 10, , 1, 2])
 
+#==========================================
+#PLOT TEMPERATURE TRENDS
 
+#filled.contour(lon,lat, t(elev.mat.sel[length(lat):1,]), color= terrain.colors, asp=1) 
 
+#plot time series
+plot(tmax[15,15,,proj.k], type="l")
+plot(tmin[15,15,,proj.k], type="l")
 
+#annual averaging
+tmin.ann= foreach(cell.k=1:nrow(pts.sel), .combine='cbind') %do% aggregate(tmin[pts.sel[cell.k, "lon.ind"], pts.sel[cell.k, "lat.ind"],,proj.k], list(time.mat[,2]), FUN=base::mean)[,2]
 
+tmax.ann= foreach(cell.k=1:nrow(pts.sel), .combine='cbind') %do% aggregate(tmax[pts.sel[cell.k, "lon.ind"], pts.sel[cell.k, "lat.ind"],,proj.k], list(time.mat[,2]), FUN=base::mean)[,2]
 
+plot(years, tmin.ann[,4], type="l")
+plot(years, tmax.ann[,4], type="l")
+
+#add names
+colnames(tmin.ann)= pts.sel$elev
+colnames(tmax.ann)= pts.sel$elev
+
+#melt data for ggplot
+library(reshape2)
+tmin2 <- melt(tmin.ann, variable.name ='elev', value.name='temp')
+tmin2[,1]= years[tmin2[,1]]
+colnames(tmin2)[1:2]=c("yr","elev")
+ggplot(tmin2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(method=loess,se=FALSE)
+
+tmax2 <- melt(tmax.ann, variable.name ='elev', value.name='temp')
+tmax2[,1]= years[tmax2[,1]]
+colnames(tmax2)[1:2]=c("yr","elev")
+ggplot(tmax2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(method=loess,se=FALSE)
+
+#--------------     
+#summer averaging
+summ.inds= which(time.mat[,1]>165 & time.mat[,1]<259)
+
+tmin.ann= foreach(cell.k=1:nrow(pts.sel), .combine='cbind') %do% aggregate(tmin[pts.sel[cell.k, "lon.ind"], pts.sel[cell.k, "lat.ind"],summ.inds, proj.k], list(time.mat[summ.inds,2]), FUN=base::mean)[,2]
+tmax.ann= foreach(cell.k=1:nrow(pts.sel), .combine='cbind') %do% aggregate(tmax[pts.sel[cell.k, "lon.ind"], pts.sel[cell.k, "lat.ind"],summ.inds, proj.k], list(time.mat[summ.inds,2]), FUN=base::mean)[,2]
+
+#add names
+colnames(tmin.ann)= pts.sel$elev
+colnames(tmax.ann)= pts.sel$elev
+
+#melt data for ggplot
+tmin2 <- melt(tmin.ann, variable.name ='elev', value.name='temp')
+tmin2[,1]= years[tmin2[,1]]
+colnames(tmin2)[1:2]=c("yr","elev")
+ggplot(tmin2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(method=loess,se=FALSE)
+#ggplot(tmin2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_line()
+
+tmax2 <- melt(tmax.ann, variable.name ='elev', value.name='temp')
+tmax2[,1]= years[tmax2[,1]]
+colnames(tmax2)[1:2]=c("yr","elev")
+ggplot(tmax2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(method=loess,se=FALSE)
+#ggplot(tmax2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_line()
 

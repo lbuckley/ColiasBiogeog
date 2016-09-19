@@ -55,6 +55,15 @@ elev_km= pts.sel$elev/1000
 
 abs.init <- int_elev+ slope_elev*elev_km
 
+#initialize with optimum value yrs 1950-1960, across generations
+abs.init2 <- rowMeans(colMeans(abs.opt[1:10,, ]))
+
+plot(elev_km, abs.init, ylim=range(0.5, 0.7))
+points(elev_km, abs.init2)
+
+#Use optimal
+abs.init<- abs.init2
+
 #-----------------------
 #Save values
 abs.mean= array(NA, dim=c(length(years),nrow(pts.sel), 3, 5,5))  #dims: yr.k, cell.k, gen.k, scen.k:no plast, plast, only plast, metrics: abssample, absmid, rn, Babsmid, Brn)
@@ -66,7 +75,7 @@ lambda.mean= array(NA, dim=c(length(years),nrow(pts.sel), 3, 5)) #dims: yr.k, ce
 #-------------------------------
 scen.mat= rbind(c(0,0,0),c(1,0,0),c(0,1,0),c(1,1,0),c(1,1,1) )
 colnames(scen.mat)= c("plast","evol","evolRN"  )
-
+ 
 for(yr.k in 1:length(years)) {
   
   ##loop through generations in each year
@@ -200,6 +209,7 @@ if(scen.k==5) abs.mean[yr.k,,gen.k,scen.k,"Brn"]= BetaRN
 
 #=====================================
 #Save output
+#_reg for regression
 
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 
