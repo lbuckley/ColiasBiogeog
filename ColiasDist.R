@@ -579,8 +579,12 @@ tmin.ann= foreach(cell.k=1:nrow(pts.sel), .combine='cbind') %do% aggregate(tmin[
 
 tmax.ann= foreach(cell.k=1:nrow(pts.sel), .combine='cbind') %do% aggregate(tmax[pts.sel[cell.k, "lon.ind"], pts.sel[cell.k, "lat.ind"],,proj.k], list(time.mat[,2]), FUN=base::mean)[,2]
 
-plot(years, tmin.ann[,4], type="l")
-plot(years, tmax.ann[,4], type="l")
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Tannual_acrossSites.pdf", height = 6, width = 12)
+plot(years, tmin.ann[,4], type="l", ylab="T annual mean", ylim=range(3,20))
+points(years, tmax.ann[,4], type="l", lty="dashed")
+legend("topleft", c("Tmax","Tmin"),lty=c("dashed", "solid"))
+dev.off()
 
 #add names
 colnames(tmin.ann)= pts.sel$elev
@@ -591,12 +595,32 @@ library(reshape2)
 tmin2 <- melt(tmin.ann, variable.name ='elev', value.name='temp')
 tmin2[,1]= years[tmin2[,1]]
 colnames(tmin2)[1:2]=c("yr","elev")
-ggplot(tmin2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(method=loess,se=FALSE)
+#cut by elevation
+tmin2$ecut= cut(tmin2$elev, breaks=3)
+
+t1= ggplot(tmin2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(method=loess,se=FALSE)  +facet_grid(~ecut)
 
 tmax2 <- melt(tmax.ann, variable.name ='elev', value.name='temp')
 tmax2[,1]= years[tmax2[,1]]
 colnames(tmax2)[1:2]=c("yr","elev")
-ggplot(tmax2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(method=loess,se=FALSE)
+#cut by elevation
+tmax2$ecut= cut(tmax2$elev, breaks=3)
+
+t2= ggplot(tmax2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(method=loess,se=FALSE) +facet_grid(~ecut)
+
+#plot temp across all sites
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Tannual_allSites.pdf", height = 12, width = 12)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(2,1)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(t1,vp=vplayout(1,1))
+print(t2,vp=vplayout(2,1))
+
+dev.off()
 
 #--------------     
 #summer averaging

@@ -76,11 +76,13 @@ lambda.mean= array(NA, dim=c(length(years),nrow(pts.sel), 3, 5)) #dims: yr.k, ce
 scen.mat= rbind(c(0,0,0),c(1,0,0),c(0,1,0),c(1,1,0),c(1,1,1) )
 colnames(scen.mat)= c("plast","evol","evolRN"  )
  
-for(yr.k in 1:length(years)) {
+for(yr.k in 44:length(years)) {
   
   ##loop through generations in each year
   for(gen.k in 1:ngens) {
 
+    BetaAbsmid=NA
+    
     Lambda.yr.gen= Lambda[yr.k, , , gen.k, ]
 
     #if(!is.na(Lambda.yr.gen)){ #FIX TO DEAL WITH NAs
@@ -120,7 +122,6 @@ for(yr.k in 1:length(years)) {
     #abs.mean[yr.k,,gen.k] <- abs.mean[yr.k,,gen.k]+abs.plast
             
     ##calculate fitness
-    #Choose random sample of abs values from current distribution (truncated normal) 
     #use fitness function to predict Lambda for each individual
     #extract coefficients and calculate across abs samples
     fit.sample= foreach(cell.k=1:nrow(pts.sel), .combine="cbind") %do% {
@@ -136,7 +137,7 @@ for(yr.k in 1:length(years)) {
     absmid.dif= t( apply(abs.sample,1,'-',abs.mean1) )
     rn.dif= t( apply(rn.sample,1,'-',rn.mean1) )
 
-    R2selnAbsmid<- rep(0, nrow(pts.sel) )
+    R2selnAbsmid<- rep(0, nrow(pts.sel) ) #No response to selection if no evolution
 if(scen.k<5 & scen.mat[scen.k,2]==1){    
       ##selection analysis
       sel.fit= sapply(1:841, function(x) if(sum(is.na(x))==0) lm(rel.fit[,x]~absmid.dif[,x] +I(absmid.dif[,x]^2))$coefficients)
@@ -150,49 +151,48 @@ if(scen.k<5 & scen.mat[scen.k,2]==1){
       R2selnAbsmid <- h2*(abs.sd^2)*BetaAbsmid
     } #end scen.k<5
 
-if(scen.k==5){    
-  ##selection analysis
-  sel.fit= sapply(1:841, function(x) if(sum(is.na(x))==0) lm(rel.fit[,x]~absmid.dif[,x] + rn.dif[,x] +I(absmid.dif[,x]^2) +I(rn.dif[,x]^2)+ rn.dif[,x]*absmid.dif[,x])$coefficients)
-  
-  #Save model
-  sel.mod= sapply(1:841, function(x) if(sum(is.na(x))==0) lm(rel.fit[,x]~absmid.dif[,x] + rn.dif[,x] +I(absmid.dif[,x]^2) +I(rn.dif[,x]^2)+ rn.dif[,x]*absmid.dif[,x]) )
-  ## EXTRACT SUMMARY?:   fitr2 <- summary(lm.fitmod.yr)$r.squared
-
-#Response to selection
-BetaAbsmid <-sel.fit[2,]
-R2selnAbsmid <- h2*(abs.sd^2)*BetaAbsmid
-
-BetaRN <- sel.fit[3,] 
-R2selnRN <- h2*(rn.sd^2)*BetaRN
-} #end scen.k==5
+    if(scen.k==5){    
+      ##selection analysis
+      sel.fit= sapply(1:841, function(x) if(sum(is.na(x))==0) lm(rel.fit[,x]~absmid.dif[,x] + rn.dif[,x] +I(absmid.dif[,x]^2) +I(rn.dif[,x]^2)+ rn.dif[,x]*absmid.dif[,x])$coefficients)
+      
+      #Save model
+      sel.mod= sapply(1:841, function(x) if(sum(is.na(x))==0) lm(rel.fit[,x]~absmid.dif[,x] + rn.dif[,x] +I(absmid.dif[,x]^2) +I(rn.dif[,x]^2)+ rn.dif[,x]*absmid.dif[,x]) )
+      ## EXTRACT SUMMARY?:   fitr2 <- summary(lm.fitmod.yr)$r.squared
+    
+    #Response to selection
+    BetaAbsmid <-sel.fit[2,]
+    R2selnAbsmid <- h2*(abs.sd^2)*BetaAbsmid
+    
+    BetaRN <- sel.fit[3,] 
+    R2selnRN <- h2*(rn.sd^2)*BetaRN
+    } #end scen.k==5
 
 #Response to selection
 if(gen.k<3) {
   abs.mean[yr.k,,gen.k+1,scen.k,"absmid"]= abs.mean[yr.k,,gen.k,scen.k,"absmid"] + R2selnAbsmid
   #Constain abs
   abs.mean[yr.k,which(abs.mean[yr.k,,gen.k+1,scen.k,"absmid"]>0.7),gen.k+1,scen.k,"absmid"]=0.7
-  abs.mean[yr.k,which(abs.mean[yr.k,,gen.k+1,scen.k,"absmid"]<0.4),gen.k+1,scen.k,"absmid"]=0.4
+  abs.mean[yr.k,which(abs.mean[yr.k,,gen.k+1,scen.k,"absmid"]<0.4),gen.k+1,scen.k,"absmid"]=0.4   
   
+  #rn evolution
   if(scen.k==5){
     abs.mean[yr.k,,gen.k+1,scen.k,"rn"]= abs.mean[yr.k,,gen.k,scen.k,"rn"] + R2selnRN
     #Constain abs
     abs.mean[yr.k,which(abs.mean[yr.k,,gen.k+1,scen.k,"rn"]>1),gen.k+1,scen.k,"rn"]= 1
     abs.mean[yr.k,which(abs.mean[yr.k,,gen.k+1,scen.k,"rn"]< -1),gen.k+1,scen.k,"rn"]= -1
   }
-}
+} 
 
 #also put in next year's slot
-abs.mean[yr.k+1,,1,scen.k,"absmid"]= abs.mean[yr.k,,1,scen.k,"absmid"] + R2selnAbsmid
+abs.mean[yr.k+1,,1,scen.k,"absmid"]= abs.mean[yr.k,,gen.k,scen.k,"absmid"] + R2selnAbsmid
 #Constain abs
 abs.mean[yr.k+1,which(abs.mean[yr.k+1,,1,scen.k,"absmid"]>0.7),1,scen.k,"absmid"]=0.7
-abs.mean[yr.k+1,which(abs.mean[yr.k+1,,1,scen.k,"absmid"]<0.4),1,scen.k,"absmid"]=0.4
+abs.mean[yr.k+1,which(abs.mean[yr.k+1,,1,scen.k,"absmid"]<0.4),1,scen.k,"absmid"]=0.4 
 
-if(scen.k==5){
-  abs.mean[yr.k+1,,1,scen.k,"rn"]= abs.mean[yr.k,,1,scen.k,"rn"] + R2selnRN
-  #Constain abs
-  abs.mean[yr.k+1,which(abs.mean[yr.k+1,,1,scen.k,"rn"]> 1),1,scen.k,"rn"]=1
-  abs.mean[yr.k+1,which(abs.mean[yr.k+1,,1,scen.k,"rn"]< -1),1,scen.k,"rn"]=-1
-}
+if(scen.k==5) abs.mean[yr.k+1,,1,scen.k,"rn"]= abs.mean[yr.k,,gen.k,scen.k,"rn"] + R2selnRN
+#Constain abs
+abs.mean[yr.k+1,which(abs.mean[yr.k+1,,gen.k,scen.k,"rn"]>1),1,scen.k,"rn"]= 1
+abs.mean[yr.k+1,which(abs.mean[yr.k+1,,gen.k,scen.k,"rn"]< -1),1,scen.k,"rn"]= -1
 
 #Store other metrics
 abs.mean[yr.k,,gen.k,scen.k,"abssample"]= colMeans(abs.plast)
@@ -216,8 +216,8 @@ setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 #saveRDS(abs.mean, "absmean.abs")
 #saveRDS(lambda.mean, "lambdamean.abs")
 
-abs.mean <- readRDS("absmean.abs")
-lambda.mean <- readRDS("lambdamean.abs")
+#abs.mean <- readRDS("absmean.abs")
+#lambda.mean <- readRDS("lambdamean.abs")
 
 #=====================================================
 ##  PLOT OUT
@@ -232,9 +232,8 @@ library(mapdata)
 library(colorRamps)     # for matlab.like(...)
 library(grid)
 
-#specify generation and scenario
-gen.k=1
-scen.k=4
+#sample sites to faciliate visualization
+site.ind=sort(base::sample(1:nrow(pts.sel),200))
 
 #=====================================================
 #Fig X. PLOT FITNESS CURVES
@@ -425,6 +424,35 @@ p.abs1 = ggplot(abs.agg1, aes(x=year, y=abs, group=X, color=elev )) +geom_line()
 p.abs2 = ggplot(abs.agg2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
 p.abs3 = ggplot(abs.agg3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
 
+#Abs without plasticity
+gen.k=1
+abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"absmid"]) ) 
+abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat$year= years[as.numeric(abs.dat$year)]
+abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+abs.agg1m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+abs.dat1m= abs.dat
+
+gen.k=2
+abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"absmid"]) ) 
+abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat$year= years[as.numeric(abs.dat$year)]
+abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+abs.agg2m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+abs.dat2m= abs.dat
+
+gen.k=3
+abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"absmid"]) ) 
+abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat$year= years[as.numeric(abs.dat$year)]
+abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+abs.agg3m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+abs.dat3m= abs.dat
+
+p.abs1m = ggplot(abs.agg1m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
+p.abs2m = ggplot(abs.agg2m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
+p.abs3m = ggplot(abs.agg3m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
+
 #Lambdas across time and elevations
 gen.k=1
 lambda.all= cbind(pts.sel, t(lambda.mean[inds,,gen.k,scen.k]) )
@@ -458,15 +486,17 @@ p.lambda1 = ggplot(lambda.agg1, aes(x=year, y=lambda, group=X, color=elev )) +ge
 p.lambda2 = ggplot(lambda.agg2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 p.lambda3 = ggplot(lambda.agg3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 
-if(scen.k==1) {p.a11=p.abs1; p.l11= p.lambda1; p.a12=p.abs2; p.l12= p.lambda2; p.a13=p.abs3; p.l13= p.lambda3}
-if(scen.k==2) {p.a21=p.abs1; p.l21= p.lambda1; p.a22=p.abs2; p.l22= p.lambda2; p.a23=p.abs3; p.l23= p.lambda3}
-if(scen.k==3) {p.a31=p.abs1; p.l31= p.lambda1; p.a32=p.abs2; p.l32= p.lambda2; p.a33=p.abs3; p.l33= p.lambda3}
-if(scen.k==4) {p.a41=p.abs1; p.l41= p.lambda1; p.a42=p.abs2; p.l42= p.lambda2; p.a43=p.abs3; p.l43= p.lambda3}
-if(scen.k==5) {p.a51=p.abs1; p.l51= p.lambda1; p.a52=p.abs2; p.l52= p.lambda2; p.a53=p.abs3; p.l53= p.lambda3}
+if(scen.k==1) {p.a11=p.abs1; p.l11= p.lambda1; p.a12=p.abs2; p.l12= p.lambda2; p.a13=p.abs3; p.l13= p.lambda3; p.m11=p.abs1m; p.m12=p.abs2m; p.m13=p.abs3m}
+if(scen.k==2) {p.a21=p.abs1; p.l21= p.lambda1; p.a22=p.abs2; p.l22= p.lambda2; p.a23=p.abs3; p.l23= p.lambda3; p.m21=p.abs1m; p.m22=p.abs2m; p.m23=p.abs3m}
+if(scen.k==3) {p.a31=p.abs1; p.l31= p.lambda1; p.a32=p.abs2; p.l32= p.lambda2; p.a33=p.abs3; p.l33= p.lambda3; p.m31=p.abs1m; p.m32=p.abs2m; p.m33=p.abs3m}
+if(scen.k==4) {p.a41=p.abs1; p.l41= p.lambda1; p.a42=p.abs2; p.l42= p.lambda2; p.a43=p.abs3; p.l43= p.lambda3; p.m41=p.abs1m; p.m42=p.abs2m; p.m43=p.abs3m}
+if(scen.k==5) {p.a51=p.abs1; p.l51= p.lambda1; p.a52=p.abs2; p.l52= p.lambda2; p.a53=p.abs3; p.l53= p.lambda3; p.m51=p.abs1m; p.m52=p.abs2m; p.m53=p.abs3m}
 
 } #end scen loop
 
 #-----------------------
+#ABS WITH PLASTICITY
+
 setwd(paste(fdir,"figures\\",sep="") )
 pdf("Abs_year.pdf", height = 12, width = 12)
 
@@ -494,7 +524,39 @@ print(p.a43,vp=vplayout(4,3))
 print(p.a53,vp=vplayout(5,3))
 
 dev.off()
+
 #-----------------------
+#ABS WITHOUT PLASTICITY
+
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Absmid_year.pdf", height = 12, width = 12)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(5,3)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(p.m11,vp=vplayout(1,1))
+print(p.m21,vp=vplayout(2,1))
+print(p.m31,vp=vplayout(3,1))
+print(p.m41,vp=vplayout(4,1))
+print(p.m51,vp=vplayout(5,1))
+
+print(p.m12,vp=vplayout(1,2))
+print(p.m22,vp=vplayout(2,2))
+print(p.m32,vp=vplayout(3,2))
+print(p.m42,vp=vplayout(4,2))
+print(p.m52,vp=vplayout(5,2))
+
+print(p.m13,vp=vplayout(1,3))
+print(p.m23,vp=vplayout(2,3))
+print(p.m33,vp=vplayout(3,3))
+print(p.m43,vp=vplayout(4,3))
+print(p.m53,vp=vplayout(5,3))
+
+dev.off()
+#-----------------------
+
 setwd(paste(fdir,"figures\\",sep="") )
 pdf("Lambda_year.pdf", height = 12, width = 12)
 
@@ -525,7 +587,6 @@ dev.off()
 
 #DO:
 #CALCULATE ABS SLOPE BY DECADE?
-#ASSUME START AT OPTIMAL ABS. TOO COLD?
 
 #-----------------------------
 #EVOLUTION OF RN
@@ -792,7 +853,8 @@ inds=1:137
   
   gen.k=1
   lambda.all= cbind(pts.sel, t(abs.opt[inds,,gen.k]) )
-  lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+#  lambda.all= lambda.all[site.ind,] #subsample to clarify plot
+  lambda.dat= gather(lambda.all, "year", "abs",9:145)
   lambda.dat$year= years[as.numeric(lambda.dat$year)]
   lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
   lambda.agg1= aggregate(lambda.dat, list(lambda.dat$year,lambda.dat$ecut), FUN=mean)
@@ -800,7 +862,8 @@ inds=1:137
   
   gen.k=2
   lambda.all= cbind(pts.sel, t(abs.opt[inds,,gen.k]) )
-  lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+  #lambda.all= lambda.all[site.ind,]
+  lambda.dat= gather(lambda.all, "year", "abs",9:145)
   lambda.dat$year= years[as.numeric(lambda.dat$year)]
   lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
   lambda.agg2= aggregate(lambda.dat, list(lambda.dat$year,lambda.dat$ecut), FUN=mean)
@@ -808,15 +871,16 @@ inds=1:137
   
   gen.k=3
   lambda.all= cbind(pts.sel, t(abs.opt[inds,,gen.k]) )
-  lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+ # lambda.all= lambda.all[site.ind,]
+  lambda.dat= gather(lambda.all, "year", "abs",9:145)
   lambda.dat$year= years[as.numeric(lambda.dat$year)]
   lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
   lambda.agg3= aggregate(lambda.dat, list(lambda.dat$year,lambda.dat$ecut), FUN=mean)
   lambda.dat3= lambda.dat
   
-  p.lambda1 = ggplot(lambda.agg1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
-  p.lambda2 = ggplot(lambda.agg2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
-  p.lambda3 = ggplot(lambda.agg3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
+  p.lambda1 = ggplot(lambda.agg1, aes(x=year, y=abs, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
+  p.lambda2 = ggplot(lambda.agg2, aes(x=year, y=abs, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
+  p.lambda3 = ggplot(lambda.agg3, aes(x=year, y=abs, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
   
   #-------------
   setwd(paste(fdir,"figures\\",sep="") )
@@ -836,9 +900,9 @@ inds=1:137
   #----------------------------
   #PLOT ALL ELEVATIONs
   
-  p.lambda1 = ggplot(lambda.dat1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
-  p.lambda2 = ggplot(lambda.dat2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
-  p.lambda3 = ggplot(lambda.dat3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
+  p.lambda1 = ggplot(lambda.dat1, aes(x=year, y=abs, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
+  p.lambda2 = ggplot(lambda.dat2, aes(x=year, y=abs, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
+  p.lambda3 = ggplot(lambda.dat3, aes(x=year, y=abs, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.70)
    
   #-------------
   setwd(paste(fdir,"figures\\",sep="") )
@@ -856,4 +920,24 @@ inds=1:137
   dev.off()
   
   #-----------------------------
-  #### START SIMULATION AT OPTIMAL ALPHA
+  # PLOT OPTIMAL WITH AVERAGING ACROSS INITIAL TIME PERIOD
+  
+  #initialize with optimum value yrs 1950-1960, across generations
+  abs.opt.init <- colMeans(abs.opt[1:30,,])
+  colnames(abs.opt.init)= c("gen1","gen2","gen3")
+  abs.opt.init= cbind(pts.sel,abs.opt.init)
+  
+  abso <- melt(abs.opt.init, value.name='abs',variable.name='gen',  measure.vars=c("gen1","gen2","gen3"))
+  
+  #abs by gen
+  setwd(paste(fdir,"figures\\",sep="") )
+  pdf("Abs_optbyElev.pdf", height = 6, width = 12)
+  ggplot(abso, aes(x=elev, y=abs, color=lat) ) +geom_point(shape=1)+ facet_grid(. ~ gen) +geom_smooth(method=lm, se=FALSE)
+  dev.off()
+  
+  #opt abs across generations
+  pdf("Abs_opt_AcrossGen.pdf", height = 6, width = 6)
+  ggplot(abso, aes(x=gen, y=abs, color=elev, group=X) ) +geom_line(shape=1)
+  dev.off()
+  
+  
