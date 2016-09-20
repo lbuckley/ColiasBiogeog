@@ -416,9 +416,9 @@ abs.dat$ecut= cut(abs.dat$elev, breaks=3)
 abs.agg3= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
 abs.dat3= abs.dat
 
-#p.abs1 = ggplot(abs.dat1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
-#p.abs2 = ggplot(abs.dat2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
-#p.abs3 = ggplot(abs.dat3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+p.abs1all = ggplot(abs.dat1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+p.abs2all = ggplot(abs.dat2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+p.abs3all = ggplot(abs.dat3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
 
 p.abs1 = ggplot(abs.agg1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
 p.abs2 = ggplot(abs.agg2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
@@ -449,6 +449,10 @@ abs.dat$ecut= cut(abs.dat$elev, breaks=3)
 abs.agg3m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
 abs.dat3m= abs.dat
 
+p.abs1allm = ggplot(abs.dat1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+p.abs2allm = ggplot(abs.dat2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+p.abs3allm = ggplot(abs.dat3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+
 p.abs1m = ggplot(abs.agg1m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
 p.abs2m = ggplot(abs.agg2m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
 p.abs3m = ggplot(abs.agg3m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
@@ -478,9 +482,9 @@ lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
 lambda.agg3= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
 lambda.dat3= lambda.dat
 
-#p.lambda1 = ggplot(lambda.dat1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
-#p.lambda2 = ggplot(lambda.dat2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
-#p.lambda3 = ggplot(lambda.dat3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p.lambda1all = ggplot(lambda.dat1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p.lambda2all = ggplot(lambda.dat2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+p.lambda3all = ggplot(lambda.dat3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 
 p.lambda1 = ggplot(lambda.agg1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 p.lambda2 = ggplot(lambda.agg2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
@@ -491,6 +495,12 @@ if(scen.k==2) {p.a21=p.abs1; p.l21= p.lambda1; p.a22=p.abs2; p.l22= p.lambda2; p
 if(scen.k==3) {p.a31=p.abs1; p.l31= p.lambda1; p.a32=p.abs2; p.l32= p.lambda2; p.a33=p.abs3; p.l33= p.lambda3; p.m31=p.abs1m; p.m32=p.abs2m; p.m33=p.abs3m}
 if(scen.k==4) {p.a41=p.abs1; p.l41= p.lambda1; p.a42=p.abs2; p.l42= p.lambda2; p.a43=p.abs3; p.l43= p.lambda3; p.m41=p.abs1m; p.m42=p.abs2m; p.m43=p.abs3m}
 if(scen.k==5) {p.a51=p.abs1; p.l51= p.lambda1; p.a52=p.abs2; p.l52= p.lambda2; p.a53=p.abs3; p.l53= p.lambda3; p.m51=p.abs1m; p.m52=p.abs2m; p.m53=p.abs3m}
+
+if(scen.k==1) {p.a11all=p.abs1all; p.l11all= p.lambda1all; p.a12all=p.abs2all; p.l12all= p.lambda2all; p.a13all=p.abs3all; p.l13all= p.lambda3all; p.m11all=p.abs1allm; p.m12all=p.abs2allm; p.m13all=p.abs3allm}
+if(scen.k==2) {p.a21all=p.abs1all; p.221all= p.lambda1all; p.a22all=p.abs2all; p.l22all= p.lambda2all; p.a23all=p.abs3all; p.l23all= p.lambda3all; p.m21all=p.abs1allm; p.m22all=p.abs2allm; p.m23all=p.abs3allm}
+if(scen.k==3) {p.a31all=p.abs1all; p.331all= p.lambda1all; p.a32all=p.abs2all; p.l32all= p.lambda2all; p.a33all=p.abs3all; p.l33all= p.lambda3all; p.m31all=p.abs1allm; p.m32all=p.abs2allm; p.m33all=p.abs3allm}
+if(scen.k==4) {p.a41all=p.abs1all; p.441all= p.lambda1all; p.a42all=p.abs2all; p.l42all= p.lambda2all; p.a43all=p.abs3all; p.l43all= p.lambda3all; p.m41all=p.abs1allm; p.m42all=p.abs2allm; p.m43all=p.abs3allm}
+if(scen.k==5) {p.a51all=p.abs1all; p.551all= p.lambda1all; p.a52all=p.abs2all; p.l52all= p.lambda2all; p.a53all=p.abs3all; p.l53all= p.lambda3all; p.m51all=p.abs1allm; p.m52all=p.abs2allm; p.m53all=p.abs3allm}
 
 } #end scen loop
 
@@ -525,6 +535,36 @@ print(p.a53,vp=vplayout(5,3))
 
 dev.off()
 
+#--------
+#all elevations
+
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Abs_year_AllElev.pdf", height = 12, width = 12)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(5,3)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(p.a11all,vp=vplayout(1,1))
+print(p.a21all,vp=vplayout(2,1))
+print(p.a31all,vp=vplayout(3,1))
+print(p.a41all,vp=vplayout(4,1))
+print(p.a51all,vp=vplayout(5,1))
+
+print(p.a12all,vp=vplayout(1,2))
+print(p.a22all,vp=vplayout(2,2))
+print(p.a32all,vp=vplayout(3,2))
+print(p.a42all,vp=vplayout(4,2))
+print(p.a52all,vp=vplayout(5,2))
+
+print(p.a13all,vp=vplayout(1,3))
+print(p.a23all,vp=vplayout(2,3))
+print(p.a33all,vp=vplayout(3,3))
+print(p.a43all,vp=vplayout(4,3))
+print(p.a53all,vp=vplayout(5,3))
+
+dev.off()
 #-----------------------
 #ABS WITHOUT PLASTICITY
 
@@ -555,6 +595,35 @@ print(p.m43,vp=vplayout(4,3))
 print(p.m53,vp=vplayout(5,3))
 
 dev.off()
+#-----------
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Absmid_year_allElev.pdf", height = 12, width = 12)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(5,3)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(p.m11all,vp=vplayout(1,1))
+print(p.m21all,vp=vplayout(2,1))
+print(p.m31all,vp=vplayout(3,1))
+print(p.m41all,vp=vplayout(4,1))
+print(p.m51all,vp=vplayout(5,1))
+
+print(p.m12all,vp=vplayout(1,2))
+print(p.m22all,vp=vplayout(2,2))
+print(p.m32all,vp=vplayout(3,2))
+print(p.m42all,vp=vplayout(4,2))
+print(p.m52all,vp=vplayout(5,2))
+
+print(p.m13all,vp=vplayout(1,3))
+print(p.m23all,vp=vplayout(2,3))
+print(p.m33all,vp=vplayout(3,3))
+print(p.m43all,vp=vplayout(4,3))
+print(p.m53all,vp=vplayout(5,3))
+
+dev.off()
+
 #-----------------------
 
 setwd(paste(fdir,"figures\\",sep="") )
@@ -582,6 +651,35 @@ print(p.l23,vp=vplayout(2,3))
 print(p.l33,vp=vplayout(3,3))
 print(p.l43,vp=vplayout(4,3))
 print(p.l53,vp=vplayout(5,3))
+
+dev.off()
+
+#----------
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Lambda_year_allElev.pdf", height = 12, width = 12)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(5,3)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(p.l11all,vp=vplayout(1,1))
+print(p.l21all,vp=vplayout(2,1))
+print(p.l31all,vp=vplayout(3,1))
+print(p.l41all,vp=vplayout(4,1))
+print(p.l51all,vp=vplayout(5,1))
+
+print(p.l12all,vp=vplayout(1,2))
+print(p.l22all,vp=vplayout(2,2))
+print(p.l32all,vp=vplayout(3,2))
+print(p.l42all,vp=vplayout(4,2))
+print(p.l52all,vp=vplayout(5,2))
+
+print(p.l13all,vp=vplayout(1,3))
+print(p.l23all,vp=vplayout(2,3))
+print(p.l33all,vp=vplayout(3,3))
+print(p.l43all,vp=vplayout(4,3))
+print(p.l53all,vp=vplayout(5,3))
 
 dev.off()
 

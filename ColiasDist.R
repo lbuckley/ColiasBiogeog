@@ -580,7 +580,7 @@ tmin.ann= foreach(cell.k=1:nrow(pts.sel), .combine='cbind') %do% aggregate(tmin[
 tmax.ann= foreach(cell.k=1:nrow(pts.sel), .combine='cbind') %do% aggregate(tmax[pts.sel[cell.k, "lon.ind"], pts.sel[cell.k, "lat.ind"],,proj.k], list(time.mat[,2]), FUN=base::mean)[,2]
 
 setwd(paste(fdir,"figures\\",sep="") )
-pdf("Tannual_acrossSites.pdf", height = 6, width = 12)
+pdf("Tannual_acrossSites.pdf", height = 6, width = 6)
 plot(years, tmin.ann[,4], type="l", ylab="T annual mean", ylim=range(3,20))
 points(years, tmax.ann[,4], type="l", lty="dashed")
 legend("topleft", c("Tmax","Tmin"),lty=c("dashed", "solid"))
