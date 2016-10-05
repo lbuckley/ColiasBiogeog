@@ -3,6 +3,10 @@
 #Run across years
 #Uses constant microclimate
 
+#CHOOSE PROJECTION
+proj.k=2 #1: bcc-csm1-1.1.rcp60, 2: ccsm4.1.rcp60, 3: gfdl-cm3.1.rcp60
+# 1 has jump and 3 dips in recent
+
 #========================================
 
 memory.size(max=TRUE)
@@ -33,6 +37,12 @@ library(doParallel)
 registerDoParallel(cl=4)
 #library(doMC)
 #registerDoMC(cores=4)
+
+library(reshape2)
+library(ggplot2)
+library(grid)
+
+fdir= "C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\"
 
 #source biophysical model and other functions
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\Butterflies\\Plasticity\\Analysis\\")
@@ -67,9 +77,6 @@ geo_mean <- function(data) {
 #--------------------------------------
 #Read DCP data
 # http://gdo-dcp.ucllnl.org/downscaled_cmip_projections/dcpInterface.html
-
-library(ncdf)
-library(chron)
 
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\Butterflies\\Plasticity\\ClimateData\\DCP\\bcca5")
 
@@ -128,8 +135,6 @@ pts$ind= 1:nrow(pts)
 
 pts$elev= extract(co.elev, pts[,1:2])
 elev.mat= matrix(pts$elev, nrow=length(lat), ncol=length(lon), byrow=TRUE)
-
-#write.csv(pts, "COpoints.csv")
 
 filled.contour(lon,lat, t(elev.mat[length(lat):1,]), color= terrain.colors, asp=1)  #[length(lat):1,]
 plot(co.elev)
@@ -263,16 +268,10 @@ mo= c(rep(1,31),rep(2,28),rep(3,31), rep(4,30),rep(5,31),rep(6,30),rep(7,31),rep
 #=========================================================================
 
 #SET PARAMETERS
-#CHOOSE PROJECTION
-proj.k=1
 
 #elevation subset
 grid.sel= which(pts$elev>1200 & pts$elev<3200)
 pts.sel= pts[grid.sel,1:7]
-
-#pts
-setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
-write.csv(pts, "COpoints.csv")
 
 ### Across sites
 # SET UP CLIMATE DATA
@@ -550,16 +549,15 @@ for(abs.k in 1:dim(Te.mat.all)[3] ){ #loop absorptivity
 #SAVE OBJECT
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 
-filename= paste("lambda1.rds",sep="")
+filename= paste("lambda1_",projs[proj.k],".rds",sep="")
 saveRDS(Lambda, filename)
 #Lambda1 <- readRDS("mymodel.rds")
 
 #Write out pupal temps
-saveRDS(pup.temps, "PupTemps.rds")
+saveRDS(pup.temps, paste("PupTemps_",projs[proj.k],".rds",sep="") )
 
 #write out points
-write.csv(pts.sel, "COpoints.csv")
-
+write.csv(pts.sel, paste("COpoints_",projs[proj.k],".rds",sep="") )
 #========================================
 #PLOT FITNESS CURVES
 plot(seq(0.4,0.7,0.05), Lambda[1, 10, , 1, 1])
@@ -574,14 +572,19 @@ plot(seq(0.4,0.7,0.05), Lambda[1, 10, , 1, 2])
 plot(tmax[15,15,,proj.k], type="l")
 plot(tmin[15,15,,proj.k], type="l")
 
+projs=c("bcc-csm","ccsm4","gfdl")
+
+#loop projections
+for(proj.k in 1:3){
+
 #annual averaging
 tmin.ann= foreach(cell.k=1:nrow(pts.sel), .combine='cbind') %do% aggregate(tmin[pts.sel[cell.k, "lon.ind"], pts.sel[cell.k, "lat.ind"],,proj.k], list(time.mat[,2]), FUN=base::mean)[,2]
 
 tmax.ann= foreach(cell.k=1:nrow(pts.sel), .combine='cbind') %do% aggregate(tmax[pts.sel[cell.k, "lon.ind"], pts.sel[cell.k, "lat.ind"],,proj.k], list(time.mat[,2]), FUN=base::mean)[,2]
 
 setwd(paste(fdir,"figures\\",sep="") )
-pdf("Tannual_acrossSites.pdf", height = 6, width = 6)
-plot(years, tmin.ann[,4], type="l", ylab="T annual mean", ylim=range(3,20))
+pdf(paste("Tannual_acrossSites_",projs[proj.k],".pdf", sep=""), height = 6, width = 6)
+plot(years, tmin.ann[,4], type="l", ylab="T annual mean", ylim=range(-7,20))
 points(years, tmax.ann[,4], type="l", lty="dashed")
 legend("topleft", c("Tmax","Tmin"),lty=c("dashed", "solid"))
 dev.off()
@@ -591,7 +594,6 @@ colnames(tmin.ann)= pts.sel$elev
 colnames(tmax.ann)= pts.sel$elev
 
 #melt data for ggplot
-library(reshape2)
 tmin2 <- melt(tmin.ann, variable.name ='elev', value.name='temp')
 tmin2[,1]= years[tmin2[,1]]
 colnames(tmin2)[1:2]=c("yr","elev")
@@ -610,7 +612,7 @@ t2= ggplot(tmax2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(metho
 
 #plot temp across all sites
 setwd(paste(fdir,"figures\\",sep="") )
-pdf("Tannual_allSites.pdf", height = 12, width = 12)
+pdf(paste("Tannual_allSites_",projs[proj.k],".pdf", sep=""), height = 12, width = 12)
 
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,1)))
@@ -621,6 +623,8 @@ print(t1,vp=vplayout(1,1))
 print(t2,vp=vplayout(2,1))
 
 dev.off()
+
+} #end projection loop
 
 #--------------     
 #summer averaging

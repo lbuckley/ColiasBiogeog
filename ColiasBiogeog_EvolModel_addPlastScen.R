@@ -3,6 +3,10 @@ library(msm)
 library(foreach)
     
 fdir= "C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\"
+
+#pick projection
+proj.k=2
+projs=c("bcc-csm","ccsm4","gfdl")
  
 #EVOLUTIONARY MODEL
 #For each year
@@ -33,13 +37,13 @@ names(a.fit)="a"
 
 #Read points
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
-pts.sel= read.csv("COpoints.csv")
-
+pts.sel= read.csv( paste("COpoints_",projs[proj.k],".csv", sep="") )
+  
 #Read lambdas and pupal temps
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 
-Lambda <- readRDS("lambda.rds")
-pup.temps <- readRDS("PupTemps.rds")
+Lambda <- readRDS( paste("lambda_",projs[proj.k],".rds", sep="") )
+pup.temps <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
 
 #phenology trends
 #plot(years,pup.temps[5,, 100, 1])
@@ -76,7 +80,7 @@ lambda.mean= array(NA, dim=c(length(years),nrow(pts.sel), 3, 5)) #dims: yr.k, ce
 scen.mat= rbind(c(0,0,0),c(1,0,0),c(0,1,0),c(1,1,0),c(1,1,1) )
 colnames(scen.mat)= c("plast","evol","evolRN"  )
  
-for(yr.k in 44:length(years)) {
+for(yr.k in 1:length(years)) {
   
   ##loop through generations in each year
   for(gen.k in 1:ngens) {
@@ -261,7 +265,9 @@ fc$abs= abs[as.numeric(fc$abs)]
 fcmap = ggplot(fc, aes(x=abs, y=lambda, group=group, color=elev)) +facet_wrap(~year) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
 #-------------------
 setwd(paste(fdir,"figures\\",sep="") )
-pdf("FitnessCurves_20002075.pdf", height = 12, width = 15)
+pdf(paste("FitnessCurves_20002075_",projs[proj.k],".pdf", sep=""), height = 12, width = 15)
+
+#******************************** 
 
 print(fcmap)
 
