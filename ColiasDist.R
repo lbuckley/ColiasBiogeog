@@ -6,7 +6,7 @@
 #CHOOSE PROJECTION
 proj.k=2 #1: bcc-csm1-1.1.rcp60, 2: ccsm4.1.rcp60, 3: gfdl-cm3.1.rcp60
 # 1 has jump and 3 dips in recent
-
+projs=c("bcc-csm","ccsm4","gfdl")
 #========================================
 
 memory.size(max=TRUE)
@@ -73,6 +73,11 @@ geo_mean <- function(data) {
   gm <- exp(mean(log_data[is.finite(log_data)]))
   return(gm)
 }
+
+## Register Cluster
+cores<-8
+cl <- makeCluster(cores)
+registerDoParallel(cl)
 
 #--------------------------------------
 #Read DCP data
@@ -251,7 +256,11 @@ Tsurf.shade6= read.csv(paste(mpath,"Tsurf_shade_6.csv",sep=""))
 Tsurf.shade9= read.csv(paste(mpath,"Tsurf_shade_9.csv",sep=""))
 
 #-----------------------------------------
-#Assesmble data
+#Assemble data
+
+#elevation subset
+grid.sel= which(pts$elev>1200 & pts$elev<3200)
+pts.sel= pts[grid.sel,1:7]
 
 #Other microclimate 
 #Max and min temp in shade
@@ -268,10 +277,6 @@ mo= c(rep(1,31),rep(2,28),rep(3,31), rep(4,30),rep(5,31),rep(6,30),rep(7,31),rep
 #=========================================================================
 
 #SET PARAMETERS
-
-#elevation subset
-grid.sel= which(pts$elev>1200 & pts$elev<3200)
-pts.sel= pts[grid.sel,1:7]
 
 ### Across sites
 # SET UP CLIMATE DATA
@@ -312,11 +317,11 @@ tmin.yr= tmin[, , inds, proj.k]
 #Temps at plant height
 
 Ta_plant_min<- foreach(d=60:273, .combine='cbind')  %do% {
-  T_mat= cbind(tmin.yr[pts.sel[cell.k, "lon.ind"], pts.sel[, "lat.ind"],d], Ts_sh_min[mo[d]-2, ])
+  T_mat= cbind(tmin.yr[pts.sel[, "lon.ind"], pts.sel[, "lat.ind"],d], Ts_sh_min[mo[d]-2, ])
   apply(T_mat,MARGIN=1, FUN=air_temp_at_height_z.mat, z_0=z_0_1, z_r=2, z=z_0_1)}
 
 Ta_plant_max<- foreach(d=60:273, .combine='cbind')  %do% {
-  T_mat= cbind(tmax.yr[pts.sel[cell.k, "lon.ind"], pts.sel[, "lat.ind"],d], Ts_sh_max[mo[d]-2, ])
+  T_mat= cbind(tmax.yr[pts.sel[, "lon.ind"], pts.sel[, "lat.ind"],d], Ts_sh_max[mo[d]-2, ])
   apply(T_mat,MARGIN=1, FUN=air_temp_at_height_z.mat, z_0=z_0_1, z_r=2, z=z_0_1)}
 
 #transpose
@@ -558,6 +563,7 @@ saveRDS(pup.temps, paste("PupTemps_",projs[proj.k],".rds",sep="") )
 
 #write out points
 write.csv(pts.sel, paste("COpoints_",projs[proj.k],".rds",sep="") )
+
 #========================================
 #PLOT FITNESS CURVES
 plot(seq(0.4,0.7,0.05), Lambda[1, 10, , 1, 1])
