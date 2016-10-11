@@ -17,7 +17,8 @@ projs=c("bcc-csm","ccsm4","gfdl")
 ## Lambda[yr.k, cell.k, abs.k, gen.k, 1]
 
 ngens=3
-years= 1950:2099
+#years= 1950:2099
+years= 1950:2000
 
 #Store abs values
 ##abs= array(NA, dim=c(length(years),dim(Lambda)[2],3))
@@ -48,6 +49,43 @@ pup.temps <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
 #phenology trends
 #plot(years,pup.temps[5,, 100, 1])
 #plot(years,Lambda[, 1, 3, 1,1])
+
+#==============================================
+#Calculate optimal absorptivity
+
+#Lambda[years, sites, abs, gen, metrics: Lambda, FAT,Egg Viability]
+abs.opt= array(NA, dim=c(length(years),nrow(pts.sel), 3))  
+
+for(yr.k in 1:length(years)) {
+  
+  ##loop through generations in each year
+  for(gen.k in 1:ngens) {
+    
+    Lambda.yr.gen= Lambda[yr.k, , , gen.k, ]
+    
+    #if(!is.na(Lambda.yr.gen)){ #FIX TO DEAL WITH NAs
+    #Extract temperatures
+    Tp= pup.temps["Tpup",yr.k, , gen.k]
+    
+    #--------------------------
+    #Fitness models
+    #Estimate fitness functions across cells
+    fit= array(unlist(apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2))$coefficients)), dim=c(3, nrow(pts.sel)) )
+    #Save model
+    fit.mod= apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2)) )
+    ## EXTRACT SUMMARY?:   fitr2 <- summary(lm.fitmod.yr)$r.squared
+    
+    #find maxima lambda
+    abs.opt[yr.k,,gen.k]= as.vector(array(unlist(sapply(fit.mod, function(x) if(!is.null(x))a.fit$a[which.max(predict.lm(x, a.fit))] )), dim=c(1, nrow(pts.sel)) ) )
+    
+  } #end gen loop
+} #end year loop
+
+#save optimal Alphas
+setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+
+saveRDS(abs.opt, paste("abs.opt_",projs[proj.k],".rds", sep=""))
+#abs.opt <- readRDS( paste("abs.opt_",projs[proj.k],".rds", sep="") )
 
 #***************************************
 #compute initial AbsMean 
@@ -912,44 +950,7 @@ inds=1:137
   
   dev.off()
   
-  #==============================================
-  #Plot optimal scenarios
-  
-  #Lambda[years, sites, abs, gen, metrics: Lambda, FAT,Egg Viability]
-  abs.opt= array(NA, dim=c(length(years),nrow(pts.sel), 3))  
-  
-  for(yr.k in 1:length(years)) {
-    
-    ##loop through generations in each year
-    for(gen.k in 1:ngens) {
-      
-      Lambda.yr.gen= Lambda[yr.k, , , gen.k, ]
-      
-      #if(!is.na(Lambda.yr.gen)){ #FIX TO DEAL WITH NAs
-      #Extract temperatures
-      Tp= pup.temps["Tpup",yr.k, , gen.k]
-      
-      #--------------------------
-      #Fitness models
-      #Estimate fitness functions across cells
-      fit= array(unlist(apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2))$coefficients)), dim=c(3, nrow(pts.sel)) )
-      #Save model
-      fit.mod= apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2)) )
-      ## EXTRACT SUMMARY?:   fitr2 <- summary(lm.fitmod.yr)$r.squared
-      
-      #find maxima lambda
-      abs.opt[yr.k,,gen.k]= as.vector(array(unlist(sapply(fit.mod, function(x) if(!is.null(x))a.fit$a[which.max(predict.lm(x, a.fit))] )), dim=c(1, nrow(pts.sel)) ) )
-  
-    } #end gen loop
-  } #end year loop
-
-  #save optimal Alphas
-  setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
-  
-  #saveRDS(abs.opt, "abs.opt")
-  
-  abs.opt <- readRDS("abs.opt")
-  
+ 
   #------------------------------  
 #plot optimal across generation
    
