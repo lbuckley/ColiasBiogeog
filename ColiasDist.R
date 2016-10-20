@@ -41,6 +41,7 @@ registerDoParallel(cl=4)
 library(reshape2)
 library(ggplot2)
 library(grid)
+library(data.table)
 
 fdir= "C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\"
 
@@ -99,6 +100,10 @@ projection= get.var.ncdf(Tmin,"projection")
 
 tmax = get.var.ncdf(Tmax,varid="tasmax")
 tmin = get.var.ncdf(Tmin,varid="tasmin")
+
+#remove ncdf
+rm(Tmin)
+rm(Tmax)
 
 ##projections
 #bcc-csm1-1.1.rcp60
@@ -190,6 +195,9 @@ FT= 1.46 #c(0.01, 0.82, 1.46, 2)
 #FUR THICKNESS: 0, eriphyle olathe, meadii mesa seco, 2
 
 days<-c(31,28,31,30,31,30,31,31,30,31,30,31) #days in months
+
+#absorptivity
+abs1=seq(0.4,0.7,0.05)
 
 #------------------------
 #PERFORMANCE FUNCTIONS
@@ -299,6 +307,10 @@ dimnames(Lambda)[[4]]<-c("gen1","gen2","gen3")
 pup.temps<-array(NA, dim=c(12, length(years),nrow(pts.sel),3)) #3 generations 
 #Add names
 dimnames(pup.temps)[[1]]= c("stat","yr","gen","Jlarv", "Jpup","Jadult","Tlarv","Tpup","Tad","Tlarv_fixed","Tpup_fixed","Tad_fixed") 
+
+#Te
+dayk= 152:243
+Te.mat.all= array(data=NA, dim=c(nrow(pts.sel), length(6:20),7, length(dayk) ) )
 
 #===================================================================
 #LOOP YEARS
@@ -441,8 +453,8 @@ zenith[zenith>=80]=80 #set zenith position below horizon to psi=80degrees
 #Calculate Te #cell.k: length(grid.sel)
 
 #LoopDays
-for(d in 152:243){
-  #print(d)
+for(day.k in 1:length(dayk) ){
+  d= dayk[day.k]
   
   Thr.d= Thr[(d-151),,]
   Ts_sun.d= Ts_sun[,,(clim[match(d,clim$J),"month"]-5)]
@@ -451,16 +463,14 @@ for(d in 152:243){
   Rhr.d= Rhr[(d-151),,]
   zenith.d= zenith[,,(clim[match(d,clim$J),"month"]-5)]
   
-  Te.mat<-  foreach(a=seq(0.4,0.7,0.05))  %:% foreach(hr=6:20, .combine="cbind") %dopar% {
-    Te.dat= cbind(Thr.d[hr,], Ts_sun.d[,hr], Ts_sh.d[,hr], wind.d[,hr], Rhr.d[hr,], Rhr.d[hr+24,],zenith.d[,hr])
-    apply(Te.dat,MARGIN=1, FUN=biophys.var_sh.mat, D, delta, a)  
+  #combine data
+  Te.dat=abind(t(Thr.d[6:20,]), Ts_sun.d[,6:20], Ts_sh.d[,6:20], wind.d[,6:20], t(Rhr.d[6:20,]), t(Rhr.d[30:44,]),zenith.d[,6:20],along=3)
+  
+Te.mat<-  foreach(a=seq(0.4,0.7,0.05))  %:% foreach(hr.k=1:15, .combine="cbind") %do% {
+   apply(Te.dat[,hr.k,],MARGIN=1, FUN=biophys.var_sh.mat, D, delta, a)  
   }
-  
-  Te.mat.d= array(unlist(Te.mat), dim = c(nrow(Te.mat[[1]]), ncol(Te.mat[[1]]), length(Te.mat)))
-  
-  
-  if(d==152) Te.mat.all= Te.mat.d
-  if(d>152) Te.mat.all= abind(Te.mat.all, Te.mat.d, along=4)
+
+Te.mat.all[,,,day.k]= array(unlist(Te.mat), dim = c(nrow(Te.mat[[1]]), ncol(Te.mat[[1]]), length(Te.mat)))
   
 } # end loop across days
 
