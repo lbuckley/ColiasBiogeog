@@ -30,7 +30,7 @@ library(truncnorm)
 
 library(ncdf)
 library(chron)
-
+ 
 library(foreach)
 library(abind) #combine matrices into array
 library(doParallel)
@@ -558,6 +558,19 @@ for(abs.k in 1:dim(Te.mat.all)[3] ){ #loop absorptivity
   
 } #end loop absortivity
 } #end loop cells
+
+#Save every 30 years
+if(yr.k/30== round(yr.k/30)){
+#SAVE OBJECT
+setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+
+filename= paste("lambda1_",projs[proj.k],".rds",sep="")
+saveRDS(Lambda, filename)
+#Lambda1 <- readRDS("mymodel.rds")
+
+#Write out pupal temps
+saveRDS(pup.temps, paste("PupTemps_",projs[proj.k],".rds",sep="") )
+} #end save
 
 } #end loop years
 

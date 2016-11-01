@@ -17,8 +17,9 @@ projs=c("bcc-csm","ccsm4","gfdl")
 ## Lambda[yr.k, cell.k, abs.k, gen.k, 1]
 
 ngens=3
-#years= 1950:2099
-years= 1950:2000
+
+years= 1950:2099
+years= years[inds]
 
 #Store abs values
 ##abs= array(NA, dim=c(length(years),dim(Lambda)[2],3))
@@ -27,7 +28,6 @@ abs.mean=0.55; #UPDATE
 abs.sd= 0.062
 rn.sd= 0.0083
 
-inds=1:137
 #-------------------------------
 #EVO MODEL
 N.ind=1000
@@ -38,13 +38,17 @@ names(a.fit)="a"
 
 #Read points
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
-pts.sel= read.csv( paste("COpoints_",projs[proj.k],".csv", sep="") )
+pts.sel= read.csv( paste("COpoints.csv", sep="") ) #_",projs[proj.k],"
   
 #Read lambdas and pupal temps
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 
-Lambda <- readRDS( paste("lambda_",projs[proj.k],".rds", sep="") )
+Lambda <- readRDS( paste("lambda1_",projs[proj.k],".rds", sep="") )
 pup.temps <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
+
+#Find years with calculations
+counts= rowSums(is.na(pup.temps[6,,,1]))
+inds=1:(which.min(counts==0) -1)
 
 #phenology trends
 #plot(years,pup.temps[5,, 100, 1])
@@ -63,12 +67,14 @@ for(yr.k in 1:length(years)) {
     
     Lambda.yr.gen= Lambda[yr.k, , , gen.k, ]
     
-    #if(!is.na(Lambda.yr.gen)){ #FIX TO DEAL WITH NAs
     #Extract temperatures
     Tp= pup.temps["Tpup",yr.k, , gen.k]
     
     #--------------------------
     #Fitness models
+    
+    if(!all(is.na(Lambda.yr.gen[,,1]))){ #check has data
+    
     #Estimate fitness functions across cells
     fit= array(unlist(apply(Lambda.yr.gen[,,1], 1, function(x) if(sum(is.na(x))==0) lm(x~a+I(a^2))$coefficients)), dim=c(3, nrow(pts.sel)) )
     #Save model
@@ -78,6 +84,7 @@ for(yr.k in 1:length(years)) {
     #find maxima lambda
     abs.opt[yr.k,,gen.k]= as.vector(array(unlist(sapply(fit.mod, function(x) if(!is.null(x))a.fit$a[which.max(predict.lm(x, a.fit))] )), dim=c(1, nrow(pts.sel)) ) )
     
+    } #end check data
   } #end gen loop
 } #end year loop
 
@@ -97,10 +104,11 @@ elev_km= pts.sel$elev/1000
 
 abs.init <- int_elev+ slope_elev*elev_km
 
+## NEED TO CALC ABS.OPT
 #initialize with optimum value yrs 1950-1960, across generations
-abs.init2 <- rowMeans(colMeans(abs.opt[1:10,, ]))
+abs.init2 <- rowMeans(colMeans(abs.opt[1:10,, ], na.rm=TRUE))
 
-plot(elev_km, abs.init, ylim=range(0.5, 0.7))
+plot(elev_km, abs.init, ylim=range(0.5, 0.7), type="l")
 points(elev_km, abs.init2)
 
 #Use optimal
@@ -127,7 +135,7 @@ for(yr.k in 1:length(years)) {
     
     Lambda.yr.gen= Lambda[yr.k, , , gen.k, ]
 
-    #if(!is.na(Lambda.yr.gen)){ #FIX TO DEAL WITH NAs
+  if(all(!is.na(Lambda.yr.gen))){ #FIX TO DEAL WITH NAs
     #Extract temperatures
     Tp= pup.temps["Tpup",yr.k, , gen.k]
     
@@ -154,6 +162,16 @@ for(yr.k in 1:length(years)) {
     if(gen.k==1) abs.mean1= abs.mean[yr.k,,gen.k,scen.k,"absmid"]
     if(gen.k>1) abs.mean1= abs.mean[yr.k,,gen.k-1,scen.k,"absmid"]
     
+    #change NA values to negative values 
+    abs.na.inds= abs.mean1[which( is.na(abs.mean1))]
+    rn.na.inds= rn.mean1[which( is.na(rn.mean1))]
+    
+    #check abs mean
+    if(!all(is.na(abs.mean1))){
+    
+    abs.mean1[which( is.na(abs.mean1))]= -10 
+    rn.mean1[which( is.na(rn.mean1))]= -1000
+       
     #Choose random sample of abs and rn values from current distribution (truncated normal) 
     abs.sample= sapply(abs.mean1, function(x) rtnorm(N.ind, mean = x, sd = abs.sd, lower=0.400, upper=0.700) )
     rn.sample= sapply(rn.mean1, function(x) rtnorm(N.ind, mean = x, sd = rn.sd, lower=-1, upper=1) )
@@ -180,7 +198,9 @@ for(yr.k in 1:length(years)) {
     rn.dif= t( apply(rn.sample,1,'-',rn.mean1) )
 
     R2selnAbsmid<- rep(0, nrow(pts.sel) ) #No response to selection if no evolution
-if(scen.k<5 & scen.mat[scen.k,2]==1){    
+    R2selnRN<- rep(0, nrow(pts.sel) ) 
+
+    if(scen.k<5 & scen.mat[scen.k,2]==1){    
       ##selection analysis
       sel.fit= sapply(1:841, function(x) if(sum(is.na(x))==0) lm(rel.fit[,x]~absmid.dif[,x] +I(absmid.dif[,x]^2))$coefficients)
       
@@ -209,6 +229,8 @@ if(scen.k<5 & scen.mat[scen.k,2]==1){
     R2selnRN <- h2*(rn.sd^2)*BetaRN
     } #end scen.k==5
 
+#    
+    
 #Response to selection
 if(gen.k<3) {
   abs.mean[yr.k,,gen.k+1,scen.k,"absmid"]= abs.mean[yr.k,,gen.k,scen.k,"absmid"] + R2selnAbsmid
@@ -225,6 +247,12 @@ if(gen.k<3) {
   }
 } 
 
+} #check NA abs.mean1
+
+#Accoutn for missing lambdas
+if(length(abs.na.inds)>0)  R2selnAbsmid[abs.na.inds]=NA    
+if(length(rn.na.inds)>0)   R2selnRN[rn.na.inds]=NA  
+        
 #also put in next year's slot
 abs.mean[yr.k+1,,1,scen.k,"absmid"]= abs.mean[yr.k,,gen.k,scen.k,"absmid"] + R2selnAbsmid
 #Constain abs
@@ -243,7 +271,7 @@ if(scen.k==5) abs.mean[yr.k,,gen.k,scen.k,"Brn"]= BetaRN
 
 } #end scen loop
 
- # } #end check NA lambda
+ } #end check NA lambda
 
   } #end generation
   print(yr.k)
@@ -735,7 +763,6 @@ dev.off()
 
 gen.k=1
 scen.k=5
-inds=1:137
  
   #------------------------
   #FIG X. Selection gradients
@@ -745,8 +772,6 @@ inds=1:137
   scen.k=4
   
   #Selection on Absorptivities across time and elevations
-  inds=1:137
-  
   for(scen.k in 3:5){
     gen.k=1
     abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Babsmid"]) ) 
