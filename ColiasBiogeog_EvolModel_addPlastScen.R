@@ -1,6 +1,7 @@
 #Evolutionary Model across biogeography
 library(msm)
 library(foreach)
+library(reshape)
     
 fdir= "C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\"
 
@@ -10,7 +11,7 @@ projs=c("bcc-csm","ccsm4","gfdl")
  
 #EVOLUTIONARY MODEL
 #For each year
-#Fit fitness curves
+#Fit fitness curves 
 #Simulate individuals: pick trait value
 #Calculate fitness
 #Evolution: update trait value
@@ -286,8 +287,8 @@ setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 #saveRDS(abs.mean, "absmean.abs")
 #saveRDS(lambda.mean, "lambdamean.abs")
 
-#abs.mean <- readRDS("absmean.abs")
-#lambda.mean <- readRDS("lambdamean.abs")
+abs.mean <- readRDS("absmean.abs")
+lambda.mean <- readRDS("lambdamean.abs")
 
 #=====================================================
 ##  PLOT OUT
@@ -979,12 +980,12 @@ scen.k=5
   #------------------------------  
 #plot optimal across generation
    
-  inds=1:137
+  inds=1:120  #137
   
   gen.k=1
   lambda.all= cbind(pts.sel, t(abs.opt[inds,,gen.k]) )
 #  lambda.all= lambda.all[site.ind,] #subsample to clarify plot
-  lambda.dat= gather(lambda.all, "year", "abs",9:145)
+  lambda.dat= gather(lambda.all, "year", "abs",9:128)
   lambda.dat$year= years[as.numeric(lambda.dat$year)]
   lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
   lambda.agg1= aggregate(lambda.dat, list(lambda.dat$year,lambda.dat$ecut), FUN=mean)
@@ -993,7 +994,7 @@ scen.k=5
   gen.k=2
   lambda.all= cbind(pts.sel, t(abs.opt[inds,,gen.k]) )
   #lambda.all= lambda.all[site.ind,]
-  lambda.dat= gather(lambda.all, "year", "abs",9:145)
+  lambda.dat= gather(lambda.all, "year", "abs",9:128)
   lambda.dat$year= years[as.numeric(lambda.dat$year)]
   lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
   lambda.agg2= aggregate(lambda.dat, list(lambda.dat$year,lambda.dat$ecut), FUN=mean)
@@ -1002,7 +1003,7 @@ scen.k=5
   gen.k=3
   lambda.all= cbind(pts.sel, t(abs.opt[inds,,gen.k]) )
  # lambda.all= lambda.all[site.ind,]
-  lambda.dat= gather(lambda.all, "year", "abs",9:145)
+  lambda.dat= gather(lambda.all, "year", "abs",9:128)
   lambda.dat$year= years[as.numeric(lambda.dat$year)]
   lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
   lambda.agg3= aggregate(lambda.dat, list(lambda.dat$year,lambda.dat$ecut), FUN=mean)
@@ -1058,6 +1059,9 @@ scen.k=5
   abs.opt.init= cbind(pts.sel,abs.opt.init)
   
   abso <- melt(abs.opt.init, value.name='abs',variable.name='gen',  measure.vars=c("gen1","gen2","gen3"))
+  #fix names
+  names(abso)[which(names(abso)=="variable")]="gen"
+  names(abso)[which(names(abso)=="value")]="abs"
   
   #abs by gen
   setwd(paste(fdir,"figures\\",sep="") )
@@ -1067,7 +1071,7 @@ scen.k=5
   
   #opt abs across generations
   pdf("Abs_opt_AcrossGen.pdf", height = 6, width = 6)
-  ggplot(abso, aes(x=gen, y=abs, color=elev, group=X) ) +geom_line(shape=1)
+  ggplot(abso, aes(x=gen, y=abs, color=elev, group=X) ) +geom_line()
   dev.off()
   
   
