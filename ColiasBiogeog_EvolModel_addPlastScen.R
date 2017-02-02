@@ -20,7 +20,6 @@ projs=c("bcc-csm","ccsm4","gfdl")
 ngens=3
 
 years= 1950:2099
-years= years[inds]
 
 #Store abs values
 ##abs= array(NA, dim=c(length(years),dim(Lambda)[2],3))
@@ -49,7 +48,9 @@ pup.temps <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
 
 #Find years with calculations
 counts= rowSums(is.na(pup.temps[6,,,1]))
-inds=1:(which.min(counts==0) -1)
+#inds=1:(which.min(counts==0) -1)
+inds=1:150
+years= years[inds]
 
 #phenology trends
 #plot(years,pup.temps[5,, 100, 1])
@@ -92,8 +93,8 @@ for(yr.k in 1:length(years)) {
 #save optimal Alphas
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 
-saveRDS(abs.opt, paste("abs.opt_",projs[proj.k],".rds", sep=""))
-#abs.opt <- readRDS( paste("abs.opt_",projs[proj.k],".rds", sep="") )
+#saveRDS(abs.opt, paste("abs.opt_",projs[proj.k],".rds", sep=""))
+abs.opt <- readRDS( paste("abs.opt_",projs[proj.k],".rds", sep="") )
 
 #***************************************
 #compute initial AbsMean 
@@ -280,7 +281,7 @@ if(scen.k==5) abs.mean[yr.k,,gen.k,scen.k,"Brn"]= BetaRN
 
 #=====================================
 #Save output
-#_reg for regression
+#_reg for regression 
 
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 
@@ -392,50 +393,51 @@ dev.off()
 #STATS: pup.temps[[1]]= c("stat","yr","gen","Jlarv", "Jpup","Jadult","Tlarv","Tpup","Tad","Tlarv_fixed","Tpup_fixed","Tad_fixed") 
 
 #Jadult
-phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) )
-phen= gather(phen, "year", "Jadult",9:145)
+phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) ) 
+phen= gather(phen, "year", "Jadult",9:(length(years)+8))
 phen$year= years[as.numeric(phen$year)]
-p11 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(125,275)
+p11 = ggplot(phen, aes(x=year, y=Jadult, group=ind, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(125,275)
+#only subset of sites?
 
 phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,2]) )
-phen= gather(phen, "year", "Jadult",9:145)
+phen= gather(phen, "year", "Jadult",9:(length(years)+8))
 phen$year= years[as.numeric(phen$year)]
 p12 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(125,275)
 
 phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,3]) )
-phen= gather(phen, "year", "Jadult",9:145)
+phen= gather(phen, "year", "Jadult",9:(length(years)+8))
 phen$year= years[as.numeric(phen$year)]
 p13 = ggplot(phen, aes(x=year, y=Jadult, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(125,275)
 
 #Tpupal
 phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) )
-phen= gather(phen, "year", "Tpup",9:145)
+phen= gather(phen, "year", "Tpup",9:(length(years)+8))
 phen$year= years[as.numeric(phen$year)]
 p21 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 
 phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,2]) )
-phen= gather(phen, "year", "Tpup",9:145)
+phen= gather(phen, "year", "Tpup",9:(length(years)+8))
 phen$year= years[as.numeric(phen$year)]
 p22 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 
 phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,3]) )
-phen= gather(phen, "year", "Tpup",9:145)
+phen= gather(phen, "year", "Tpup",9:(length(years)+8))
 phen$year= years[as.numeric(phen$year)]
 p23 = ggplot(phen, aes(x=year, y=Tpup, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 
 #Tadult
 phen= cbind(pts.sel, t(pup.temps["Tad",inds,,1]) )
-phen= gather(phen, "year", "Tad",9:145)
+phen= gather(phen, "year", "Tad",9:(length(years)+8))
 phen$year= years[as.numeric(phen$year)]
 p31 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 
 phen= cbind(pts.sel, t(pup.temps["Tad",inds,,2]) )
-phen= gather(phen, "year", "Tad",9:145)
+phen= gather(phen, "year", "Tad",9:(length(years)+8))
 phen$year= years[as.numeric(phen$year)]
 p32 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 
 phen= cbind(pts.sel, t(pup.temps["Tad",inds,,3]) )
-phen= gather(phen, "year", "Tad",9:145)
+phen= gather(phen, "year", "Tad",9:(length(years)+8))
 phen$year= years[as.numeric(phen$year)]
 p33 = ggplot(phen, aes(x=year, y=Tad, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(5,25)
 #---------------
@@ -462,12 +464,11 @@ dev.off()
 #==================================
 
 #Absorptivities across time and elevations
-inds=1:137
 
 for(scen.k in 1:5){
 gen.k=1
 abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"abssample"]) ) 
-abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
 abs.dat$year= years[as.numeric(abs.dat$year)]
 abs.dat$ecut= cut(abs.dat$elev, breaks=3)
 abs.agg1= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
@@ -475,7 +476,7 @@ abs.dat1= abs.dat
 
 gen.k=2
 abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"abssample"]) ) 
-abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
 abs.dat$year= years[as.numeric(abs.dat$year)]
 abs.dat$ecut= cut(abs.dat$elev, breaks=3)
 abs.agg2= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
@@ -483,7 +484,7 @@ abs.dat2= abs.dat
 
 gen.k=3
 abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"abssample"]) ) 
-abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
 abs.dat$year= years[as.numeric(abs.dat$year)]
 abs.dat$ecut= cut(abs.dat$elev, breaks=3)
 abs.agg3= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
@@ -500,7 +501,7 @@ p.abs3 = ggplot(abs.agg3, aes(x=year, y=abs, group=X, color=elev )) +geom_line()
 #Abs without plasticity
 gen.k=1
 abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"absmid"]) ) 
-abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
 abs.dat$year= years[as.numeric(abs.dat$year)]
 abs.dat$ecut= cut(abs.dat$elev, breaks=3)
 abs.agg1m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
@@ -508,7 +509,7 @@ abs.dat1m= abs.dat
 
 gen.k=2
 abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"absmid"]) ) 
-abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
 abs.dat$year= years[as.numeric(abs.dat$year)]
 abs.dat$ecut= cut(abs.dat$elev, breaks=3)
 abs.agg2m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
@@ -516,7 +517,7 @@ abs.dat2m= abs.dat
 
 gen.k=3
 abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"absmid"]) ) 
-abs.dat= gather(abs.all, "year", "abs",9:145)
+abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
 abs.dat$year= years[as.numeric(abs.dat$year)]
 abs.dat$ecut= cut(abs.dat$elev, breaks=3)
 abs.agg3m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
@@ -533,7 +534,7 @@ p.abs3m = ggplot(abs.agg3m, aes(x=year, y=abs, group=X, color=elev )) +geom_line
 #Lambdas across time and elevations
 gen.k=1
 lambda.all= cbind(pts.sel, t(lambda.mean[inds,,gen.k,scen.k]) )
-lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+lambda.dat= gather(lambda.all, "year", "lambda",9:(length(years)+8) )
 lambda.dat$year= years[as.numeric(lambda.dat$year)]
 lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
 lambda.agg1= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
@@ -541,7 +542,7 @@ lambda.dat1= lambda.dat
 
 gen.k=2
 lambda.all= cbind(pts.sel, t(lambda.mean[inds,,gen.k,scen.k]) )
-lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+lambda.dat= gather(lambda.all, "year", "lambda",9:(length(years)+8) )
 lambda.dat$year= years[as.numeric(lambda.dat$year)]
 lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
 lambda.agg2= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
@@ -549,7 +550,7 @@ lambda.dat2= lambda.dat
 
 gen.k=3
 lambda.all= cbind(pts.sel, t(lambda.mean[inds,,gen.k,scen.k]) )
-lambda.dat= gather(lambda.all, "year", "lambda",9:145)
+lambda.dat= gather(lambda.all, "year", "lambda",9:(length(years)+8) )
 lambda.dat$year= years[as.numeric(lambda.dat$year)]
 lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
 lambda.agg3= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
@@ -1073,5 +1074,129 @@ scen.k=5
   pdf("Abs_opt_AcrossGen.pdf", height = 6, width = 6)
   ggplot(abso, aes(x=gen, y=abs, color=elev, group=X) ) +geom_line()
   dev.off()
+  
+#=========================================================
+#UPDATED PLOTS: FITNESS SURFACE
+
+  library(gridExtra)
+  library(akima) #for interpolations 
+  library(tidyr) #for gather
+  library(ggplot2)
+  library(akima)
+  library(fields) #for image plot
+
+  #plot with shared legend
+  grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, position = c("bottom", "right")) {
+    
+    plots <- list(...)
+    position <- match.arg(position)
+    g <- ggplotGrob(plots[[1]] + theme(legend.position = position))$grobs
+    legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+    lheight <- sum(legend$height)
+    lwidth <- sum(legend$width)
+    gl <- lapply(plots, function(x) x + theme(legend.position="none"))
+    gl <- c(gl, ncol = ncol, nrow = nrow)
+    
+    combined <- switch(position,
+                       "bottom" = arrangeGrob(do.call(arrangeGrob, gl),
+                                              legend,
+                                              ncol = 1,
+                                              heights = unit.c(unit(1, "npc") - lheight, lheight)),
+                       "right" = arrangeGrob(do.call(arrangeGrob, gl),
+                                             legend,
+                                             ncol = 2,
+                                             widths = unit.c(unit(1, "npc") - lwidth, lwidth)))
+    grid.newpage()
+    grid.draw(combined)
+    
+  }
+  
+  #--------------------------------
+#Fig 1. elev vs year for Jadult, Tpup, Tad
+
+#dim(pup.temps)= 12 150 841 3
+  
+  #Jadult 1st gen
+  phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) ) 
+  phen= gather(phen, "year", "Jadult",9:(length(years)+8))
+  phen$year= years[as.numeric(phen$year)]
+  
+  #sort by elevation
+  ord= order(pts.sel$elev)
+  z1= pup.temps["Jadult",inds,ord,1]
+  elevs= pts.sel$elev[ord]
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  
+  image.plot(x = years, y = elevs, z=z1)
+  
+  
+ # test.spline <- Tps(data.frame(phen$year,phen$elev), phen$Jadult)
+#  new.grid <- predictSurface(test.spline, nx = 200, ny = 200)
+#  image(new.grid)
+ 
+  
+#------------------
+#  z1= pup.temps["Jadult",inds,,1]
+#  y01= seq(min(pts.sel$elev), max(pts.sel$elev), length.out=length(years) )
+#  fld1<- bicubic(x = years, y = pts.sel$elev, z=z1, x0=years, y0=y01 )
+#  gdat <- interp2xyz(fld1, data.frame=TRUE)
+  
+#  plot.Jad= ggplot(gdat) + 
+#    aes(x = x, y = y, z = z, fill = z) + 
+#    geom_tile() + 
+#    geom_contour(color = "white", alpha = 0.5) + 
+#    scale_fill_distiller(palette="Spectral", na.value="white", name="Jadult") +
+#    theme_bw(base_size=18)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
+
+
+  #------------------------------------
+  #Tpup
+  phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) ) 
+  phen= gather(phen, "year", "Tpup",9:(length(years)+8))
+  phen$year= years[as.numeric(phen$year)]
+  
+  #sort by elevation
+  ord= order(pts.sel$elev)
+  z1= pup.temps["Tpup",inds,ord,1]
+  elevs= pts.sel$elev[ord]
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  
+  image.plot(x = years, y = elevs, z=z1)
+  
+  #------------------------------------
+  #Tad
+  phen= cbind(pts.sel, t(pup.temps["Tad",inds,,1]) ) 
+  phen= gather(phen, "year", "Tad",9:(length(years)+8))
+  phen$year= years[as.numeric(phen$year)]
+  
+  #sort by elevation
+  ord= order(pts.sel$elev)
+  z1= pup.temps["Tad",inds,ord,1]
+  elevs= pts.sel$elev[ord]
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  
+  image.plot(x = years, y = elevs, z=z1)
+  
+  #------------------------------------
+# plot together
+#    fig6= grid_arrange_shared_legend(f1,f2,f3,f4,f5, ncol = 3, nrow = 2)  
+    
+  
+  
   
   
