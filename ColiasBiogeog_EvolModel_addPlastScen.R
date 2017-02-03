@@ -1112,7 +1112,7 @@ scen.k=5
   }
   
   #--------------------------------
-#Fig 1. elev vs year for Jadult, Tpup, Tad
+#Fig 1. elev vs year for Jadult, Tpup, Tad    
 
 #dim(pup.temps)= 12 150 841 3
   
@@ -1134,6 +1134,14 @@ scen.k=5
   
   image.plot(x = years, y = elevs, z=z1)
   
+  #scatter plot
+  p<- ggplot(data=phen, aes(x=year, y = elev, color=Jadult )) + scale_color_gradientn(colours=rainbow(20) )
+  p + geom_point() 
+  
+ #scatter plot
+  plot(years, phen[160,9:158])
+  plot(pts.sel$elev, phen[,130])
+  
   
  # test.spline <- Tps(data.frame(phen$year,phen$elev), phen$Jadult)
 #  new.grid <- predictSurface(test.spline, nx = 200, ny = 200)
@@ -1153,7 +1161,17 @@ scen.k=5
 #    scale_fill_distiller(palette="Spectral", na.value="white", name="Jadult") +
 #    theme_bw(base_size=18)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
 
-
+s=interp(phen$year,phen$elev,phen$Jadult, duplicate=strip)
+ surface3d(s$x,s$y,s$z)
+ gdat <- interp2xyz(s, data.frame=TRUE)
+ 
+ plot.Jad= ggplot(gdat) + 
+       aes(x = x, y = y, z = z, fill = z) + 
+       geom_tile() + 
+       geom_contour(color = "white", alpha = 0.5) + 
+       scale_fill_distiller(palette="Spectral", na.value="white", name="Jadult") +
+       theme_bw(base_size=18)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
+   
   #------------------------------------
   #Tpup
   phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) ) 
@@ -1196,7 +1214,37 @@ scen.k=5
 # plot together
 #    fig6= grid_arrange_shared_legend(f1,f2,f3,f4,f5, ncol = 3, nrow = 2)  
     
+#==========================================
+# OPTIMAL ABSORPTIVITY
   
+  #plot optimal across generation
   
+  inds=1:150
+  
+  gen.k=1
+  lambda.all= cbind(pts.sel, t(abs.opt[inds,,gen.k]) )
+  #  lambda.all= lambda.all[site.ind,] #subsample to clarify plot
+  lambda.dat= gather(lambda.all, "year", "abs",9:ncol(lambda.all))
+  lambda.dat$year= years[as.numeric(lambda.dat$year)]
+  
+  #scatter plot
+  p<- ggplot(data=lambda.dat, aes(x=year, y = elev, color=abs )) + scale_color_gradientn(colours=rainbow(20) )
+  p + geom_point() 
+
+  abs.opt # 150 841   3 
+  plot(years, abs.opt[,100,1])
+  plot(pts.sel$elev, abs.opt[20,,1])
+  
+  #surface plot
+  s=interp(lambda.dat$year,lambda.dat$elev,lambda.dat$abs, duplicate=TRUE)
+  surface3d(s$x,s$y,s$z)
+  gdat <- interp2xyz(s, data.frame=TRUE)
+  
+  plot.Jad= ggplot(gdat) + 
+    aes(x = x, y = y, z = z, fill = z) + 
+    geom_tile() + 
+    geom_contour(color = "white", alpha = 0.5) + 
+    scale_fill_distiller(palette="Spectral", na.value="white", name="Jadult") +
+    theme_bw(base_size=18)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") 
   
   
