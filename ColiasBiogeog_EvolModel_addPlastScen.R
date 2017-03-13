@@ -1138,16 +1138,21 @@ scen.k=5
   p<- ggplot(data=phen, aes(x=year, y = elev, color=Jadult )) + scale_color_gradientn(colours=rainbow(20) )
   p + geom_point() 
   
+  #plot single years and elevs to test
+  phen2= phen[phen$year==1960, ]
+  plot(phen2$elev, phen2$Jadult)
+  
+  phen2= phen[phen$elev==2058, ]
+  plot(phen2$year, phen2$Jadult)
+  
  #scatter plot
   plot(years, phen[160,9:158])
   plot(pts.sel$elev, phen[,130])
-  
   
  # test.spline <- Tps(data.frame(phen$year,phen$elev), phen$Jadult)
 #  new.grid <- predictSurface(test.spline, nx = 200, ny = 200)
 #  image(new.grid)
  
-  
 #------------------
 #  z1= pup.temps["Jadult",inds,,1]
 #  y01= seq(min(pts.sel$elev), max(pts.sel$elev), length.out=length(years) )
@@ -1172,7 +1177,20 @@ s=interp(phen$year,phen$elev,phen$Jadult, duplicate=strip)
        scale_fill_distiller(palette="Spectral", na.value="white", name="Jadult") +
        theme_bw(base_size=18)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
    
-  #------------------------------------
+ #level plots
+ library(lattice)
+ levelplot(Jadult ~ elev*year, data = phen, col.regions=terrain.colors(100))
+ 
+ contourplot(Jadult ~ elev*year, data = phen,
+             region=TRUE,
+             aspect = "fill",
+             col.regions = terrain.colors(100))
+ 
+ plot(phen$elev, phen$year)
+ 
+ #subsample
+ 
+  #============================================================================
   #Tpup
   phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) ) 
   phen= gather(phen, "year", "Tpup",9:(length(years)+8))
