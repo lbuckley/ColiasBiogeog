@@ -547,7 +547,7 @@ for(abs.k in 1:dim(Te.mat.all)[3] ){ #loop absorptivity
         Lambda1= Lambda1+ SurvMat * SurvDaily^day *Eggs1;                        
       }#end loop days
       
-      Lambda[yr.k, cell.k, abs.k, gen.k, 1]= Lambda1
+      Lambda[yr.k, cell.k, abs.k, gen.k, 1]=  
       Lambda[yr.k, cell.k, abs.k, gen.k, 2]= mean(FAT.ind) #FAT
       Lambda[yr.k, cell.k, abs.k, gen.k, 3]= mean(ev.ind) #egg viability
       Lambda[yr.k, cell.k, abs.k, gen.k, 4]= mean(T.ind, na.rm=T) #Temp
@@ -678,4 +678,7 @@ tmax2[,1]= years[tmax2[,1]]
 colnames(tmax2)[1:2]=c("yr","elev")
 ggplot(tmax2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(method=loess,se=FALSE)
 #ggplot(tmax2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_line()
+
+
+
 

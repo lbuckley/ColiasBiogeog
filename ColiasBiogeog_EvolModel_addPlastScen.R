@@ -1114,10 +1114,13 @@ scen.k=5
   #--------------------------------
 #Fig 1. elev vs year for Jadult, Tpup, Tad    
 
-#dim(pup.temps)= 12 150 841 3
+  #dim(pup.temps)= 12 150 841 3
   
   #Jadult 1st gen
   phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) ) 
+  #subset points
+  #phen= phen[site.ind,]
+  
   phen= gather(phen, "year", "Jadult",9:(length(years)+8))
   phen$year= years[as.numeric(phen$year)]
   
@@ -1132,64 +1135,32 @@ scen.k=5
   dups= which(duplicated(elevs))
   elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
   
-  image.plot(x = years, y = elevs, z=z1)
-  
-  #scatter plot
-  p<- ggplot(data=phen, aes(x=year, y = elev, color=Jadult )) + scale_color_gradientn(colours=rainbow(20) )
-  p + geom_point() 
-  
   #plot single years and elevs to test
   phen2= phen[phen$year==1960, ]
   plot(phen2$elev, phen2$Jadult)
   
-  phen2= phen[phen$elev==2058, ]
-  plot(phen2$year, phen2$Jadult)
-  
- #scatter plot
+  #scatter plot
   plot(years, phen[160,9:158])
   plot(pts.sel$elev, phen[,130])
   
- # test.spline <- Tps(data.frame(phen$year,phen$elev), phen$Jadult)
-#  new.grid <- predictSurface(test.spline, nx = 200, ny = 200)
-#  image(new.grid)
- 
 #------------------
-#  z1= pup.temps["Jadult",inds,,1]
-#  y01= seq(min(pts.sel$elev), max(pts.sel$elev), length.out=length(years) )
-#  fld1<- bicubic(x = years, y = pts.sel$elev, z=z1, x0=years, y0=y01 )
-#  gdat <- interp2xyz(fld1, data.frame=TRUE)
+ 
+  #sample sites to faciliate visualization
+  s.inds=sort(base::sample(1:nrow(phen),50000))  
+  phen1= phen[s.inds,]
   
-#  plot.Jad= ggplot(gdat) + 
-#    aes(x = x, y = y, z = z, fill = z) + 
-#    geom_tile() + 
-#    geom_contour(color = "white", alpha = 0.5) + 
-#    scale_fill_distiller(palette="Spectral", na.value="white", name="Jadult") +
-#    theme_bw(base_size=18)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
-
-s=interp(phen$year,phen$elev,phen$Jadult, duplicate=strip)
- surface3d(s$x,s$y,s$z)
+  #Interpolate
+  s=interp(phen1$year,phen1$elev,phen1$Jadult, duplicate="strip")
+ 
  gdat <- interp2xyz(s, data.frame=TRUE)
  
  plot.Jad= ggplot(gdat) + 
        aes(x = x, y = y, z = z, fill = z) + 
        geom_tile() + 
-       geom_contour(color = "white", alpha = 0.5) + 
        scale_fill_distiller(palette="Spectral", na.value="white", name="Jadult") +
-       theme_bw(base_size=18)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
-   
- #level plots
- library(lattice)
- levelplot(Jadult ~ elev*year, data = phen, col.regions=terrain.colors(100))
- 
- contourplot(Jadult ~ elev*year, data = phen,
-             region=TRUE,
-             aspect = "fill",
-             col.regions = terrain.colors(100))
- 
- plot(phen$elev, phen$year)
- 
- #subsample
- 
+       theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
+      #geom_contour(color = "white", alpha = 0.5) + 
+plot.Jad
   #============================================================================
   #Tpup
   phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) ) 
@@ -1207,7 +1178,24 @@ s=interp(phen$year,phen$elev,phen$Jadult, duplicate=strip)
   dups= which(duplicated(elevs))
   elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
   
-  image.plot(x = years, y = elevs, z=z1)
+  #------------------
+  
+  #sample sites to faciliate visualization
+  s.inds=sort(base::sample(1:nrow(phen),10000))  
+  phen1= phen[s.inds,]
+  
+  #Interpolate
+  s=interp(phen1$year,phen1$elev,phen1$Tpup, duplicate="strip")
+  
+  gdat <- interp2xyz(s, data.frame=TRUE)
+  
+  plot.Tpup= ggplot(gdat) + 
+    aes(x = x, y = y, z = z, fill = z) + 
+    geom_tile() + 
+    scale_fill_distiller(palette="Spectral", na.value="white", name="Tpup") +
+    theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
+  #geom_contour(color = "white", alpha = 0.5) + 
+  plot.Tpup
   
   #------------------------------------
   #Tad
@@ -1226,43 +1214,106 @@ s=interp(phen$year,phen$elev,phen$Jadult, duplicate=strip)
   dups= which(duplicated(elevs))
   elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
   
-  image.plot(x = years, y = elevs, z=z1)
+  #------------------
+  
+  #sample sites to faciliate visualization
+  s.inds=sort(base::sample(1:nrow(phen),50000))  
+  phen1= phen[s.inds,]
+  #cut coldest temp to facilitate color scale
+  phen1= phen1[which(phen1$Tad>7),]
+  
+  #Interpolate
+  s=interp(phen1$year,phen1$elev,phen1$Tad, duplicate="strip")
+  #, xo=seq(min(phen1$year), max(phen1$year), length = 80), yo=seq(min(phen1$elev), max(phen1$elev), length = 80))
+  
+  gdat <- interp2xyz(s, data.frame=TRUE)
+  
+  plot.Tad= ggplot(gdat) + 
+    aes(x = x, y = y, z = z, fill = z) + 
+    geom_tile() + 
+    scale_fill_distiller(palette="Spectral", na.value="white", name="Tad") +
+    theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
+  #geom_contour(color = "white", alpha = 0.5) + 
+  plot.Tad
   
   #------------------------------------
 # plot together
-#    fig6= grid_arrange_shared_legend(f1,f2,f3,f4,f5, ncol = 3, nrow = 2)  
+
+  #fig6= grid_arrange_shared_legend(f1,f2,f3,f4,f5, ncol = 3, nrow = 2)  
+  setwd(paste(fdir,"figures\\", sep=""))
+  
+  pdf("FigJadTpupTad.pdf", height=4, width=10)
+  grid.arrange(plot.Jad, plot.Tpup, plot.Tad, ncol = 3)
+  dev.off()
+
+#==========================================  
+#LAMBDA PLOT
+  gen.k=1
+  scen.k=1 ##VARY SCENARIO
+  
+  lambda.all= cbind(pts.sel, t(lambda.mean[inds,,gen.k,scen.k]) )
+  
+  lambda.dat= gather(lambda.all, "year", "lambda",9:(length(years)+8) )
+  lambda.dat$year= years[as.numeric(lambda.dat$year)]
+  
+  #sample sites to faciliate visualization
+  s.inds=sort(base::sample(1:nrow(lambda.dat),50000))  
+  lambda.dat1= lambda.dat[s.inds,]
+  
+  #remove nas
+  lambda.dat1= lambda.dat1[which(!is.na(lambda.dat1$lambda)),]
+  
+  #surface plot
+  s=interp(lambda.dat1$year,lambda.dat1$elev,lambda.dat1$lambda, duplicate="split")
+  
+  gdat <- interp2xyz(s, data.frame=TRUE)
+  
+  plot.lambda= ggplot(gdat) + 
+    aes(x = x, y = y, z = z, fill = z) + 
+    geom_tile() + 
+    scale_fill_distiller(palette="Spectral", na.value="white", name="lambda") +
+    theme_bw(base_size=18)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") 
+  
+  plot.lambda
     
 #==========================================
 # OPTIMAL ABSORPTIVITY
   
   #plot optimal across generation
-  
-  inds=1:150
-  
   gen.k=1
   lambda.all= cbind(pts.sel, t(abs.opt[inds,,gen.k]) )
+  
   #  lambda.all= lambda.all[site.ind,] #subsample to clarify plot
   lambda.dat= gather(lambda.all, "year", "abs",9:ncol(lambda.all))
   lambda.dat$year= years[as.numeric(lambda.dat$year)]
   
+  #subsample min and max values
+  lambda.dat1= lambda.dat[which(lambda.dat$abs<0.7),]
+  lambda.dat1= lambda.dat1[which(lambda.dat1$abs>0.4),]
+  
+  #sample sites to faciliate visualization
+  s.inds=sort(base::sample(1:nrow(lambda.dat1),10000))  
+  lambda.dat1= lambda.dat1[s.inds,]
+  
   #scatter plot
-  p<- ggplot(data=lambda.dat, aes(x=year, y = elev, color=abs )) + scale_color_gradientn(colours=rainbow(20) )
-  p + geom_point() 
-
-  abs.opt # 150 841   3 
-  plot(years, abs.opt[,100,1])
-  plot(pts.sel$elev, abs.opt[20,,1])
+#  abs.opt # 150 841   3 
+#  plot(years, abs.opt[,100,1])
+#  plot(pts.sel$elev, abs.opt[20,,1])
+  plot(lambda.dat1$elev, lambda.dat1$abs)
+  
   
   #surface plot
-  s=interp(lambda.dat$year,lambda.dat$elev,lambda.dat$abs, duplicate=TRUE)
-  surface3d(s$x,s$y,s$z)
+  s=interp(lambda.dat1$year,lambda.dat1$elev,lambda.dat1$abs, duplicate="split")
+ 
   gdat <- interp2xyz(s, data.frame=TRUE)
   
-  plot.Jad= ggplot(gdat) + 
+  plot.opt= ggplot(gdat) + 
     aes(x = x, y = y, z = z, fill = z) + 
     geom_tile() + 
-    geom_contour(color = "white", alpha = 0.5) + 
-    scale_fill_distiller(palette="Spectral", na.value="white", name="Jadult") +
+    scale_fill_distiller(palette="Spectral", na.value="white", name="abs") +
     theme_bw(base_size=18)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") 
   
+  plot.opt
+  
+  #FIND INTER PROBLEM
   
