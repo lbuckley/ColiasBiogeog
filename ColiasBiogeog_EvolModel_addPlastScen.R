@@ -308,7 +308,7 @@ library(grid)
 site.ind=sort(base::sample(1:nrow(pts.sel),200))
 
 #=====================================================
-#Fig X. PLOT FITNESS CURVES
+#Fig X PLOT FITNESS CURVES
 #Lambda[years, sites, abs, gen, metrics: Lambda, FAT,Egg Viability]
 
 abs= seq(0.4,0.7,0.05)
@@ -1256,17 +1256,34 @@ plot.Jad
   lambda.dat= gather(lambda.all, "year", "lambda",9:(length(years)+8) )
   lambda.dat$year= years[as.numeric(lambda.dat$year)]
   
-  #sample sites to faciliate visualization
-  s.inds=sort(base::sample(1:nrow(lambda.dat),50000))  
-  lambda.dat1= lambda.dat[s.inds,]
+  ##sample sites to faciliate visualization
+  #s.inds=sort(base::sample(1:nrow(lambda.dat),10000))  
+  #lambda.dat1= lambda.dat[s.inds,]
+  lambda.dat1= lambda.dat
   
   #remove nas
   lambda.dat1= lambda.dat1[which(!is.na(lambda.dat1$lambda)),]
+  
+  #point plots
+  ggplot(lambda.dat1)+aes(x = elev, y = year, color=lambda)+geom_point()
+  ggplot(lambda.dat1)+aes(x = elev, y = lambda, color=year)+geom_point()
+  
+  #year factor
+  lambda.dat1$year.sel=  lambda.dat1$year
+  lambda.dat1$year.sel[which( (lambda.dat1$year.sel %in% c(1980,2010,2040))==FALSE)]=NA
+  lambda.dat1$year.sel = as.factor(lambda.dat1$year.sel)
+  #subset to focal years
+  lambda.dat2= lambda.dat1[!is.na(lambda.dat1$year.sel),]
+  #plot
+  ggplot(lambda.dat2)+aes(x = elev, y = lambda, color=year.sel)+geom_point()+theme_bw()+geom_smooth(method=lm, se=TRUE)
   
   #surface plot
   s=interp(lambda.dat1$year,lambda.dat1$elev,lambda.dat1$lambda, duplicate="split")
   
   gdat <- interp2xyz(s, data.frame=TRUE)
+  
+  #set high values to NA
+  gdat[which(gdat$z>5),"z"]= NA
   
   plot.lambda= ggplot(gdat) + 
     aes(x = x, y = y, z = z, fill = z) + 
@@ -1295,17 +1312,18 @@ plot.Jad
   s.inds=sort(base::sample(1:nrow(lambda.dat1),10000))  
   lambda.dat1= lambda.dat1[s.inds,]
   
-  #scatter plot
-#  abs.opt # 150 841   3 
-#  plot(years, abs.opt[,100,1])
-#  plot(pts.sel$elev, abs.opt[20,,1])
-  plot(lambda.dat1$elev, lambda.dat1$abs)
-  
+  #point plots
+  ggplot(lambda.dat1)+aes(x = elev, y = year, color=abs)+geom_point()
+  ggplot(lambda.dat1)+aes(x = elev, y = abs, color=year)+geom_point()
   
   #surface plot
-  s=interp(lambda.dat1$year,lambda.dat1$elev,lambda.dat1$abs, duplicate="split")
+  s=interp(lambda.dat1$year,lambda.dat1$elev,lambda.dat1$abs, duplicate="split", linear=FALSE)
  
   gdat <- interp2xyz(s, data.frame=TRUE)
+  
+  #set high values to NA
+  gdat[which(gdat$z<0.4),"z"]= NA
+  gdat[which(gdat$z>0.7),"z"]= NA
   
   plot.opt= ggplot(gdat) + 
     aes(x = x, y = y, z = z, fill = z) + 
@@ -1316,4 +1334,236 @@ plot.Jad
   plot.opt
   
   #FIND INTER PROBLEM
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# FIGURES
+  
+#Fig 1. elev vs year for Jadult, Tpup, Tad    
+  
+  #dim(pup.temps)= 12 150 841 3
+  
+  #Jadult 1st gen
+  phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) ) 
+  #subset points
+  #phen= phen[site.ind,]
+  
+  phen= gather(phen, "year", "Jadult",9:(length(years)+8))
+  phen$year= years[as.numeric(phen$year)]
+  
+  #sort by elevation
+  ord= order(pts.sel$elev)
+  z1= pup.temps["Jadult",inds,ord,1]
+  elevs= pts.sel$elev[ord]
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  
+  #plot single years and elevs to test
+  phen2= phen[phen$year==1960, ]
+  plot(phen2$elev, phen2$Jadult)
+  
+  #scatter plot
+  plot(years, phen[160,9:158])
+  plot(pts.sel$elev, phen[,130])
+  
+  #------------------
+  
+  #sample sites to faciliate visualization
+  s.inds=sort(base::sample(1:nrow(phen),50000))  
+  phen1= phen[s.inds,]
+  
+  #Interpolate
+  s=interp(phen1$year,phen1$elev,phen1$Jadult, duplicate="strip")
+  
+  gdat <- interp2xyz(s, data.frame=TRUE)
+  
+  plot.Jad= ggplot(gdat) + 
+    aes(x = x, y = y, z = z, fill = z) + 
+    geom_tile() + 
+    scale_fill_distiller(palette="Spectral", na.value="white", name="Jadult") +
+    theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
+  #geom_contour(color = "white", alpha = 0.5) + 
+  plot.Jad
+  #============================================================================
+  #Tpup
+  phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) ) 
+  phen= gather(phen, "year", "Tpup",9:(length(years)+8))
+  phen$year= years[as.numeric(phen$year)]
+  
+  #sort by elevation
+  ord= order(pts.sel$elev)
+  z1= pup.temps["Tpup",inds,ord,1]
+  elevs= pts.sel$elev[ord]
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  
+  #------------------
+  
+  #sample sites to faciliate visualization
+  s.inds=sort(base::sample(1:nrow(phen),10000))  
+  phen1= phen[s.inds,]
+  
+  #Interpolate
+  s=interp(phen1$year,phen1$elev,phen1$Tpup, duplicate="strip")
+  
+  gdat <- interp2xyz(s, data.frame=TRUE)
+  
+  plot.Tpup= ggplot(gdat) + 
+    aes(x = x, y = y, z = z, fill = z) + 
+    geom_tile() + 
+    scale_fill_distiller(palette="Spectral", na.value="white", name="Tpup") +
+    theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
+  #geom_contour(color = "white", alpha = 0.5) + 
+  plot.Tpup
+  
+  #------------------------------------
+  #Tad
+  phen= cbind(pts.sel, t(pup.temps["Tad",inds,,1]) ) 
+  phen= gather(phen, "year", "Tad",9:(length(years)+8))
+  phen$year= years[as.numeric(phen$year)]
+  
+  #sort by elevation
+  ord= order(pts.sel$elev)
+  z1= pup.temps["Tad",inds,ord,1]
+  elevs= pts.sel$elev[ord]
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  dups= which(duplicated(elevs))
+  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
+  
+  #------------------
+  
+  #sample sites to faciliate visualization
+  s.inds=sort(base::sample(1:nrow(phen),50000))  
+  phen1= phen[s.inds,]
+  #cut coldest temp to facilitate color scale
+  phen1= phen1[which(phen1$Tad>7),]
+  
+  #Interpolate
+  s=interp(phen1$year,phen1$elev,phen1$Tad, duplicate="strip")
+  #, xo=seq(min(phen1$year), max(phen1$year), length = 80), yo=seq(min(phen1$elev), max(phen1$elev), length = 80))
+  
+  gdat <- interp2xyz(s, data.frame=TRUE)
+  
+  plot.Tad= ggplot(gdat) + 
+    aes(x = x, y = y, z = z, fill = z) + 
+    geom_tile() + 
+    scale_fill_distiller(palette="Spectral", na.value="white", name="Tad") +
+    theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
+  #geom_contour(color = "white", alpha = 0.5) + 
+  plot.Tad
+  
+  #------------------------------------
+  # plot together
+  
+  #fig6= grid_arrange_shared_legend(f1,f2,f3,f4,f5, ncol = 3, nrow = 2)  
+  setwd(paste(fdir,"figures\\", sep=""))
+  
+  pdf("FigJadTpupTad.pdf", height=4, width=10)
+  grid.arrange(plot.Jad, plot.Tpup, plot.Tad, ncol = 3)
+  dev.off()
+
+#=======================================
+  
+#Fig 2. PLOT FITNESS CURVES
+  #Lambda[years, sites, abs, gen, metrics: Lambda, FAT,Egg Viability]
+  
+  abs= seq(0.4,0.7,0.05)
+  
+#group by elevation
+  dat= Lambda[,,,2,1]
+  
+  dat1= cbind(pts.sel, t(dat[,,1]) )
+  dat2= cbind(pts.sel, t(dat[,,2]) )
+  dat3= cbind(pts.sel, t(dat[,,3]) )
+  dat4= cbind(pts.sel, t(dat[,,4]) )
+  dat5= cbind(pts.sel, t(dat[,,5]) )
+  dat6= cbind(pts.sel, t(dat[,,6]) )
+  dat7= cbind(pts.sel, t(dat[,,7]) )
+  
+  fc1= gather(dat1, "year", "lambda",9:158)
+  fc1$abs=1
+  fc2= gather(dat2, "year", "lambda",9:158)
+  fc2$abs=2
+  fc3= gather(dat3, "year", "lambda",9:158)
+  fc3$abs=3
+  fc4= gather(dat4, "year", "lambda",9:158)
+  fc4$abs=4
+  fc5= gather(dat5, "year", "lambda",9:158)
+  fc5$abs=5
+  fc6= gather(dat6, "year", "lambda",9:158)
+  fc6$abs=6
+  fc7= gather(dat7, "year", "lambda",9:158)
+  fc7$abs=7
+  
+  fc=rbind(fc1,fc2,fc3,fc4,fc5,fc6,fc7)
+  fc$elevation= cut(fc$elev, breaks=3)
+  
+  #restrict years
+  fc= fc[which(fc$year %in% c(1980,2010,2040) ),]
+  fc$abs= abs[as.numeric(fc$abs)]  
+  
+  fc1= ddply(fc, .(elevation,year,abs), summarize, lambda=mean(lambda,na.rm=TRUE))
+  fc1$year= as.factor(fc1$year)
+
+  fcmap2 = ggplot(fc1, aes(x=abs, y=lambda, color=elevation, lty=year)) +geom_line(lwd=1) +theme_bw()+ theme(legend.position = "bottom")
+  
+  #-------------------
+  setwd(paste(fdir,"figures\\",sep="") )
+  pdf("FitnessCurves_elevs.pdf", height = 8, width = 8)
+  
+  print(fcmap2)
+  
+  dev.off()  
+
+  #=======================================
+  
+  #Fig 3. OPTIMAL ABSORPTIVITY
+  
+  #AVERAGE ACROSS TIME PERIODS
+  #initialize with optimum value yrs 1950-1980, across generations
+  abs.opt.init1 <- colMeans(abs.opt[which(years %in% 1951:1980),,], na.rm = TRUE)
+  colnames(abs.opt.init1)= c("gen1","gen2","gen3")
+  abs.opt.init1= cbind(pts.sel,abs.opt.init1)
+  abs.opt.init1$period=19511980
+  
+  abs.opt.init2 <- colMeans(abs.opt[which(years %in% 1981:2010),,], na.rm = TRUE)
+  colnames(abs.opt.init2)= c("gen1","gen2","gen3")
+  abs.opt.init2= cbind(pts.sel,abs.opt.init2)
+  abs.opt.init2$period=19812010
+  
+  abs.opt.init3 <- colMeans(abs.opt[which(years %in% 2011:2040),,], na.rm = TRUE)
+  colnames(abs.opt.init3)= c("gen1","gen2","gen3")
+  abs.opt.init3= cbind(pts.sel,abs.opt.init3)
+  abs.opt.init3$period=20112040
+  
+  abs.opt.init= rbind(abs.opt.init1, abs.opt.init2, abs.opt.init3 )
+  
+  #----------
+  abso <- melt(abs.opt.init, value.name='abs',variable.name='gen',  measure.vars=c("gen1","gen2","gen3"))
+  #fix names
+  names(abso)[which(names(abso)=="variable")]="gen"
+  names(abso)[which(names(abso)=="value")]="abs"
+  
+  abso$period=as.factor(abso$period)
+  
+  #----------------------------
+  #abs by gen
+  setwd(paste(fdir,"figures\\",sep="") )
+  pdf("Fig3_Abs_optbyElev.pdf", height = 6, width = 12)
+  ggplot(abso, aes(x=elev, y=abs, color=period) ) +geom_point(shape=1)+ facet_grid(. ~ gen) +geom_smooth(method=lm, se=FALSE)+theme_bw()+ theme(legend.position = "bottom")
+  dev.off()
+  
+  
+  
+  
   
