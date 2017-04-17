@@ -303,6 +303,7 @@ library(maps)
 library(mapdata)
 library(colorRamps)     # for matlab.like(...)
 library(grid)
+library(arrayhelpers)
 
 #sample sites to faciliate visualization
 site.ind=sort(base::sample(1:nrow(pts.sel),200))
@@ -549,63 +550,411 @@ lambda.diff[,,,3]= lambda.diff[,,,3]-lambda.diff[,,,1]
 lambda.diff[,,,4]= lambda.diff[,,,4]-lambda.diff[,,,1] 
 lambda.diff[,,,5]= lambda.diff[,,,5]-lambda.diff[,,,1] 
 
-#group across years: 1980-2010, 2010-2040
-
-#AVERAGE ACROSS TIME PERIODS
-#initialize with optimum value yrs 1950-1980, across generations
-lambda.diff2 <- colMeans(lambda.diff[which(years %in% 1981:2010),,,], na.rm = TRUE)
-#generation 1
-lambda.diff2 <- lambda.diff2[,1,]
-lambda.diff2= cbind(pts.sel,lambda.diff2)
-lambda.diff2$period= 19812010
-
-lambda.diff3 <- colMeans(lambda.diff[which(years %in% 2011:2040),,,], na.rm = TRUE)
-#generation 1
-lambda.diff3 <- lambda.diff3[,1,]
-lambda.diff3= cbind(pts.sel,lambda.diff3)
-lambda.diff3$period= 20112040
-
-lambda.diffs= rbind(lambda.diff2, lambda.diff3 )
-
-#----------
-ldiff <- melt(lambda.diffs, value.name='lambda',variable.name='scen',  measure.vars=c("1","2","3","4","5"))
-#fix names
-names(ldiff)[which(names(ldiff)=="variable")]="scen"
-names(ldiff)[which(names(ldiff)=="value")]="lambda"
-
-#cut scenerio 1
-ldiff= ldiff[ldiff$scen!=1,]
-
-ldiff$period= as.factor(ldiff$period)
-
-scens= c("plast0evol0", "plast1evol0", "plast0evol1", "plast1evol1", "plast1evol1rnevol1")
-ldiff$scen= scens[ldiff$scen]
-
-#point plots
-ggplot(ldiff)+aes(x = elev, y = lambda, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")
-
-#--------------
-#all years
+#separate generations
 lgen1= lambda.diff[,,1,]
 lgen2= lambda.diff[,,2,]
 lgen3= lambda.diff[,,3,]
 
+#drop 1st scenario
+lgen1= lgen1[,,2:5]
+lgen2= lgen2[,,2:5]
+lgen3= lgen3[,,2:5]
 
-l1= adply(lambda.diff, c(4)) 
+#--------------
+#flatten array
+l1= array2df(lgen1)
+colnames(l1)=c("lambda","year","site","scen")
+l2= array2df(lgen2)
+colnames(l2)=c("lambda","year","site","scen")
+l3= array2df(lgen3)
+colnames(l3)=c("lambda","year","site","scen")
 
-l1= as.data.frame(as.table(lambda.diff))
+#add elevation
+l1$elev= pts.sel$elev[l1$site]
+l2$elev= pts.sel$elev[l2$site]
+l3$elev= pts.sel$elev[l3$site]
 
-l1= lambda.diff[,,1,]
+#add year
+l1$year= years[l1$year]
+l2$year= years[l2$year]
+l3$year= years[l3$year]
 
+#add scenario
+scens= c("plast0evol0", "plast1evol0", "plast0evol1", "plast1evol1", "plast1evol1rnevol1")
+l1$scen= scens[l1$scen]
+l2$scen= scens[l2$scen]
+l3$scen= scens[l3$scen]
 
-ldiff <- melt(lambda.diff, value.name='lambda',variable.name='scen',  measure.vars=c("1","2","3","4","5"))
+#PLOT
+#Specify generation
+lg=l1
 
+#add time period
+lg$period=NA
+#lg$period[which(lg$year>1950 & lg$year<=1980)]= 19511980
+lg$period[which(lg$year>1980 & lg$year<=2010)]= 19812010
+lg$period[which(lg$year>2010 & lg$year<=2040)]= 20112040
+lg$period[which(lg$year>2040 & lg$year<=2070)]= 20412070
+lg$period= as.factor(lg$period)
 
-ggplot(lambda.diff)+aes(x = elev, y = lambda, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")
+#remove l1$period==NA
+lg= lg[which(!is.na(lg$period)),]
 
+#group
+lg.per= ddply(lg, .(period,elev,site,scen), summarize, lambda=mean(lambda,na.rm=TRUE))
 
+#plot
+ggplot(lg.per)+aes(x = elev, y = lambda, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()
 
+#====================================
+#Compare absorptivities
 
+#calculate absorptivity differences by scenario  
+lambda.diff= abs.mean[,,,,1] #use absmean
+lambda.diff[,,,2]= lambda.diff[,,,2]-lambda.diff[,,,1] 
+lambda.diff[,,,3]= lambda.diff[,,,3]-lambda.diff[,,,1] 
+lambda.diff[,,,4]= lambda.diff[,,,4]-lambda.diff[,,,1] 
+lambda.diff[,,,5]= lambda.diff[,,,5]-lambda.diff[,,,1] 
 
+#separate generations
+lgen1= lambda.diff[,,1,]
+lgen2= lambda.diff[,,2,]
+lgen3= lambda.diff[,,3,]
+
+#drop 1st scenario
+lgen1= lgen1[,,2:5]
+lgen2= lgen2[,,2:5]
+lgen3= lgen3[,,2:5]
+
+#--------------
+#flatten array
+l1= array2df(lgen1)
+colnames(l1)=c("abs","year","site","scen")
+l2= array2df(lgen2)
+colnames(l2)=c("abs","year","site","scen")
+l3= array2df(lgen3)
+colnames(l3)=c("abs","year","site","scen")
+
+#add elevation
+l1$elev= pts.sel$elev[l1$site]
+l2$elev= pts.sel$elev[l2$site]
+l3$elev= pts.sel$elev[l3$site]
+
+#add year
+l1$year= years[l1$year]
+l2$year= years[l2$year]
+l3$year= years[l3$year]
+
+#add scenario
+scens= c("plast0evol0", "plast1evol0", "plast0evol1", "plast1evol1", "plast1evol1rnevol1")
+l1$scen= scens[l1$scen+1]
+l2$scen= scens[l2$scen+1]
+l3$scen= scens[l3$scen+1]
+
+#PLOT
+#Specify generation
+lg=l1
+
+#add time period
+lg$period=NA
+#lg$period[which(lg$year>1950 & lg$year<=1980)]= 19511980
+lg$period[which(lg$year>1980 & lg$year<=2010)]= 19812010
+lg$period[which(lg$year>2010 & lg$year<=2040)]= 20112040
+lg$period[which(lg$year>2040 & lg$year<=2070)]= 20412070
+lg$period= as.factor(lg$period)
+
+#order scenarios
+lg$scen= factor(lg$scen, levels=c("plast1evol0", "plast0evol1", "plast1evol1", "plast1evol1rnevol1") )
+
+#remove l1$period==NA
+lg= lg[which(!is.na(lg$period)),]
+
+#group
+lg.per= ddply(lg, .(period,elev,site,scen), summarize, abs=mean(abs,na.rm=TRUE))
+
+#plot
+ggplot(lg.per)+aes(x = elev, y = abs, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()
+
+#==================================================
+#PLOT ABS TIME SERIES
+
+#Absorptivities across time and elevations
+
+for(scen.k in 1:5){
+  gen.k=1
+  abs.all= cbind(pts.sel, t(abs.mean[,,gen.k,scen.k,"abssample"]) ) 
+  abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
+  abs.dat$year= years[as.numeric(abs.dat$year)]
+  abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+  abs.agg1= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.dat1= abs.dat
   
+  gen.k=2
+  abs.all= cbind(pts.sel, t(abs.mean[,,gen.k,scen.k,"abssample"]) ) 
+  abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
+  abs.dat$year= years[as.numeric(abs.dat$year)]
+  abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+  abs.agg2= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.dat2= abs.dat
+  
+  gen.k=3
+  abs.all= cbind(pts.sel, t(abs.mean[,,gen.k,scen.k,"abssample"]) ) 
+  abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
+  abs.dat$year= years[as.numeric(abs.dat$year)]
+  abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+  abs.agg3= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.dat3= abs.dat
+  
+  p.abs1all = ggplot(abs.dat1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
+  p.abs2all = ggplot(abs.dat2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
+  p.abs3all = ggplot(abs.dat3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
+  
+  p.abs1 = ggplot(abs.agg1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
+  p.abs2 = ggplot(abs.agg2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
+  p.abs3 = ggplot(abs.agg3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
+  
+  #Abs without plasticity
+  gen.k=1
+  abs.all= cbind(pts.sel, t(abs.mean[,,gen.k,scen.k,"absmid"]) ) 
+  abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
+  abs.dat$year= years[as.numeric(abs.dat$year)]
+  abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+  abs.agg1m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.dat1m= abs.dat
+  
+  gen.k=2
+  abs.all= cbind(pts.sel, t(abs.mean[,,gen.k,scen.k,"absmid"]) ) 
+  abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
+  abs.dat$year= years[as.numeric(abs.dat$year)]
+  abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+  abs.agg2m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.dat2m= abs.dat
+  
+  gen.k=3
+  abs.all= cbind(pts.sel, t(abs.mean[,,gen.k,scen.k,"absmid"]) ) 
+  abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
+  abs.dat$year= years[as.numeric(abs.dat$year)]
+  abs.dat$ecut= cut(abs.dat$elev, breaks=3)
+  abs.agg3m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.dat3m= abs.dat
+  
+  p.abs1allm = ggplot(abs.dat1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+  p.abs2allm = ggplot(abs.dat2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+  p.abs3allm = ggplot(abs.dat3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+  
+  p.abs1m = ggplot(abs.agg1m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
+  p.abs2m = ggplot(abs.agg2m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
+  p.abs3m = ggplot(abs.agg3m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
+  
+  #Lambdas across time and elevations
+  gen.k=1
+  lambda.all= cbind(pts.sel, t(lambda.mean[,,gen.k,scen.k]) )
+  lambda.dat= gather(lambda.all, "year", "lambda",9:(length(years)+8) )
+  lambda.dat$year= years[as.numeric(lambda.dat$year)]
+  lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
+  lambda.agg1= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  lambda.dat1= lambda.dat
+  
+  gen.k=2
+  lambda.all= cbind(pts.sel, t(lambda.mean[,,gen.k,scen.k]) )
+  lambda.dat= gather(lambda.all, "year", "lambda",9:(length(years)+8) )
+  lambda.dat$year= years[as.numeric(lambda.dat$year)]
+  lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
+  lambda.agg2= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  lambda.dat2= lambda.dat
+  
+  gen.k=3
+  lambda.all= cbind(pts.sel, t(lambda.mean[,,gen.k,scen.k]) )
+  lambda.dat= gather(lambda.all, "year", "lambda",9:(length(years)+8) )
+  lambda.dat$year= years[as.numeric(lambda.dat$year)]
+  lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
+  lambda.agg3= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  lambda.dat3= lambda.dat
+  
+  p.lambda1all = ggplot(lambda.dat1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+  p.lambda2all = ggplot(lambda.dat2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+  p.lambda3all = ggplot(lambda.dat3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+  
+  p.lambda1 = ggplot(lambda.agg1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+  p.lambda2 = ggplot(lambda.agg2, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+  p.lambda3 = ggplot(lambda.agg3, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+  
+  if(scen.k==1) {p.a11=p.abs1; p.l11= p.lambda1; p.a12=p.abs2; p.l12= p.lambda2; p.a13=p.abs3; p.l13= p.lambda3; p.m11=p.abs1m; p.m12=p.abs2m; p.m13=p.abs3m}
+  if(scen.k==2) {p.a21=p.abs1; p.l21= p.lambda1; p.a22=p.abs2; p.l22= p.lambda2; p.a23=p.abs3; p.l23= p.lambda3; p.m21=p.abs1m; p.m22=p.abs2m; p.m23=p.abs3m}
+  if(scen.k==3) {p.a31=p.abs1; p.l31= p.lambda1; p.a32=p.abs2; p.l32= p.lambda2; p.a33=p.abs3; p.l33= p.lambda3; p.m31=p.abs1m; p.m32=p.abs2m; p.m33=p.abs3m}
+  if(scen.k==4) {p.a41=p.abs1; p.l41= p.lambda1; p.a42=p.abs2; p.l42= p.lambda2; p.a43=p.abs3; p.l43= p.lambda3; p.m41=p.abs1m; p.m42=p.abs2m; p.m43=p.abs3m}
+  if(scen.k==5) {p.a51=p.abs1; p.l51= p.lambda1; p.a52=p.abs2; p.l52= p.lambda2; p.a53=p.abs3; p.l53= p.lambda3; p.m51=p.abs1m; p.m52=p.abs2m; p.m53=p.abs3m}
+  
+  if(scen.k==1) {p.a11all=p.abs1all; p.l11all= p.lambda1all; p.a12all=p.abs2all; p.l12all= p.lambda2all; p.a13all=p.abs3all; p.l13all= p.lambda3all; p.m11all=p.abs1allm; p.m12all=p.abs2allm; p.m13all=p.abs3allm}
+  if(scen.k==2) {p.a21all=p.abs1all; p.221all= p.lambda1all; p.a22all=p.abs2all; p.l22all= p.lambda2all; p.a23all=p.abs3all; p.l23all= p.lambda3all; p.m21all=p.abs1allm; p.m22all=p.abs2allm; p.m23all=p.abs3allm}
+  if(scen.k==3) {p.a31all=p.abs1all; p.331all= p.lambda1all; p.a32all=p.abs2all; p.l32all= p.lambda2all; p.a33all=p.abs3all; p.l33all= p.lambda3all; p.m31all=p.abs1allm; p.m32all=p.abs2allm; p.m33all=p.abs3allm}
+  if(scen.k==4) {p.a41all=p.abs1all; p.441all= p.lambda1all; p.a42all=p.abs2all; p.l42all= p.lambda2all; p.a43all=p.abs3all; p.l43all= p.lambda3all; p.m41all=p.abs1allm; p.m42all=p.abs2allm; p.m43all=p.abs3allm}
+  if(scen.k==5) {p.a51all=p.abs1all; p.551all= p.lambda1all; p.a52all=p.abs2all; p.l52all= p.lambda2all; p.a53all=p.abs3all; p.l53all= p.lambda3all; p.m51all=p.abs1allm; p.m52all=p.abs2allm; p.m53all=p.abs3allm}
+  
+} #end scen loop
+
+#-----------------------
+#ABS WITH PLASTICITY
+
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Abs_year.pdf", height = 12, width = 12)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(4,3)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+#print(p.a11,vp=vplayout(1,1))
+print(p.a21,vp=vplayout(1,1))
+print(p.a31,vp=vplayout(2,1))
+print(p.a41,vp=vplayout(3,1))
+print(p.a51,vp=vplayout(4,1))
+
+#print(p.a12,vp=vplayout(1,2))
+print(p.a22,vp=vplayout(1,2))
+print(p.a32,vp=vplayout(2,2))
+print(p.a42,vp=vplayout(3,2))
+print(p.a52,vp=vplayout(4,2))
+
+#print(p.a13,vp=vplayout(1,3))
+print(p.a23,vp=vplayout(1,3))
+print(p.a33,vp=vplayout(2,3))
+print(p.a43,vp=vplayout(3,3))
+print(p.a53,vp=vplayout(4,3))
+
+dev.off()
+
+#===============================================
+#MAPS LAMBDA AND ABS RELATIVE TO BASELINE (2010?)
+
+#LAMBDA
+#average lambdas across time period
+#first generation
+lambda.diff= lambda.mean[,,1,]
+per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = FALSE, dims = 1)
+per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = FALSE, dims = 1)
+per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims = 1)
+per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
+
+#translate to difference from 1981-2010 for no plasticity or evolution
+lper1= per1-per2[,1]
+lper3= per3-per2[,1]
+lper4= per4-per2[,1]
+
+#ABS
+#average abs across time period
+#first generation
+lambda.diff= abs.mean[,,1,,1]
+per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = FALSE, dims = 1)
+per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = FALSE, dims = 1)
+per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims = 1)
+per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
+
+#translate to difference from 1981-2010 for no plasticity or evolution
+aper1= per1-per2[,1]
+aper3= per3-per2[,1]
+aper4= per4-per2[,1]
+
+#-------------------------------------------
+#MAP
+
+for(scen.k in 1:5){
+  
+  #LAMBDA
+  #Set up data
+  lper1= cbind(pts.sel, lper1[,scen.k])
+  lper3= cbind(pts.sel, lper3[,scen.k])
+  lper4= cbind(pts.sel, lper4[,scen.k])
+  
+  names(lper1)[9]="lambda"
+  names(lper3)[9]="lambda"
+  names(lper4)[9]="lambda"
+                    
+  #set up map
+  bbox <- ggmap::make_bbox(lon, lat, lper1, f = 0.1)
+  map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
+  map1=ggmap(map_loc, margins=FALSE)
+  
+  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+  
+  #-------------
+  #ABS
+  #Set up data
+  aper1= cbind(pts.sel, aper1[,scen.k])
+  aper3= cbind(pts.sel, aper3[,scen.k])
+  aper4= cbind(pts.sel, aper4[,scen.k])
+  
+  names(aper1)[9]="abs"
+  names(aper3)[9]="abs"
+  names(aper4)[9]="abs"
+  
+  #set up map
+  bbox <- ggmap::make_bbox(lon, lat, aper1, f = 0.1)
+  map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
+  map1=ggmap(map_loc, margins=FALSE)
+  
+  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+  aper3.map<- map1 + geom_raster(data=aper3, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+  aper4.map<- map1 + geom_raster(data=aper4, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+  
+  #----------
+  if(scen.k==1) {lper1.1=lper1.map; aper1.1=aper1.map; lper3.1=lper3.map; aper3.1=aper3.map; lper4.1=lper4.map; aper4.1=aper4.map}
+  if(scen.k==2) {lper1.2=lper1.map; aper1.2=aper1.map; lper3.2=lper3.map; aper3.2=aper3.map; lper4.2=lper4.map; aper4.2=aper4.map}
+  if(scen.k==3) {lper1.3=lper1.map; aper1.3=aper1.map; lper3.3=lper3.map; aper3.3=aper3.map; lper4.3=lper4.map; aper4.3=aper4.map}
+  if(scen.k==4) {lper1.4=lper1.map; aper1.4=aper1.map; lper3.4=lper3.map; aper3.4=aper3.map; lper4.4=lper4.map; aper4.4=aper4.map}
+  if(scen.k==5) {lper1.5=lper1.map; aper1.5=aper1.map; lper3.5=lper3.map; aper3.5=aper3.map; lper4.5=lper4.map; aper4.5=aper4.map}
+  
+} #end scen loop
+
+#-------------------
+### UPDATE
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Abs_map.pdf", height = 15, width = 8)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(5,2)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(a2000.1,vp=vplayout(1,1))
+print(a2075.1,vp=vplayout(1,2))
+print(a2000.2,vp=vplayout(2,1))
+print(a2075.2,vp=vplayout(2,2))
+print(a2000.3,vp=vplayout(3,1))
+print(a2075.3,vp=vplayout(3,2))
+print(a2000.4,vp=vplayout(4,1))
+print(a2075.4,vp=vplayout(4,2))
+print(a2000.5,vp=vplayout(5,1))
+print(a2075.5,vp=vplayout(5,2))
+
+dev.off()
+
+#-------------
+pdf("Lambda_map.pdf", height = 15, width = 8)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(5,2)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(l2000.1,vp=vplayout(1,1))
+print(l2075.1,vp=vplayout(1,2))
+print(l2000.2,vp=vplayout(2,1))
+print(l2075.2,vp=vplayout(2,2))
+print(l2000.3,vp=vplayout(3,1))
+print(l2075.3,vp=vplayout(3,2))
+print(l2000.4,vp=vplayout(4,1))
+print(l2075.4,vp=vplayout(4,2))
+print(l2000.5,vp=vplayout(5,1))
+print(l2075.5,vp=vplayout(5,2))
+
+dev.off()
+
+
+
+
+
+
   
