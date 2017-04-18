@@ -837,9 +837,9 @@ per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims =
 per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
-lper1= per1-per2[,1]
-lper3= per3-per2[,1]
-lper4= per4-per2[,1]
+lper1s= per1-per2[,1]
+lper3s= per3-per2[,1]
+lper4s= per4-per2[,1]
 
 #ABS
 #average abs across time period
@@ -851,9 +851,9 @@ per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims =
 per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
-aper1= per1-per2[,1]
-aper3= per3-per2[,1]
-aper4= per4-per2[,1]
+aper1s= per1-per2[,1]
+aper3s= per3-per2[,1]
+aper4s= per4-per2[,1]
 
 #-------------------------------------------
 #MAP
@@ -862,9 +862,9 @@ for(scen.k in 1:5){
   
   #LAMBDA
   #Set up data
-  lper1= cbind(pts.sel, lper1[,scen.k])
-  lper3= cbind(pts.sel, lper3[,scen.k])
-  lper4= cbind(pts.sel, lper4[,scen.k])
+  lper1= cbind(pts.sel, lper1s[,scen.k])
+  lper3= cbind(pts.sel, lper3s[,scen.k])
+  lper4= cbind(pts.sel, lper4s[,scen.k])
   
   names(lper1)[9]="lambda"
   names(lper3)[9]="lambda"
@@ -875,16 +875,16 @@ for(scen.k in 1:5){
   map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
   map1=ggmap(map_loc, margins=FALSE)
   
-  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
-  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
-  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.6,1.4))+ coord_fixed() + theme(legend.position="bottom")
+  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.6,1.4))+ coord_fixed() + theme(legend.position="bottom")
+  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.6,1.4))+ coord_fixed() + theme(legend.position="bottom")
   
   #-------------
   #ABS
   #Set up data
-  aper1= cbind(pts.sel, aper1[,scen.k])
-  aper3= cbind(pts.sel, aper3[,scen.k])
-  aper4= cbind(pts.sel, aper4[,scen.k])
+  aper1= cbind(pts.sel, aper1s[,scen.k])
+  aper3= cbind(pts.sel, aper3s[,scen.k])
+  aper4= cbind(pts.sel, aper4s[,scen.k])
   
   names(aper1)[9]="abs"
   names(aper3)[9]="abs"
@@ -895,9 +895,9 @@ for(scen.k in 1:5){
   map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
   map1=ggmap(map_loc, margins=FALSE)
   
-  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
-  aper3.map<- map1 + geom_raster(data=aper3, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
-  aper4.map<- map1 + geom_raster(data=aper4, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10))+ coord_fixed() + theme(legend.position="bottom")
+  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.08,0.18))+ coord_fixed() + theme(legend.position="bottom")
+  aper3.map<- map1 + geom_raster(data=aper3, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.08,0.18))+ coord_fixed() + theme(legend.position="bottom")
+  aper4.map<- map1 + geom_raster(data=aper4, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.08,0.18))+ coord_fixed() + theme(legend.position="bottom")
   
   #----------
   if(scen.k==1) {lper1.1=lper1.map; aper1.1=aper1.map; lper3.1=lper3.map; aper3.1=aper3.map; lper4.1=lper4.map; aper4.1=aper4.map}
@@ -909,25 +909,33 @@ for(scen.k in 1:5){
 } #end scen loop
 
 #-------------------
-### UPDATE
 setwd(paste(fdir,"figures\\",sep="") )
 pdf("Abs_map.pdf", height = 15, width = 8)
 
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(5,2)))
+pushViewport(viewport(layout=grid.layout(5,3)))
 vplayout<-function(x,y)
   viewport(layout.pos.row=x,layout.pos.col=y)
 
-print(a2000.1,vp=vplayout(1,1))
-print(a2075.1,vp=vplayout(1,2))
-print(a2000.2,vp=vplayout(2,1))
-print(a2075.2,vp=vplayout(2,2))
-print(a2000.3,vp=vplayout(3,1))
-print(a2075.3,vp=vplayout(3,2))
-print(a2000.4,vp=vplayout(4,1))
-print(a2075.4,vp=vplayout(4,2))
-print(a2000.5,vp=vplayout(5,1))
-print(a2075.5,vp=vplayout(5,2))
+print(aper1.1,vp=vplayout(1,1))
+print(aper3.1,vp=vplayout(1,2))
+print(aper4.1,vp=vplayout(1,3))
+
+print(aper1.2,vp=vplayout(2,1))
+print(aper3.2,vp=vplayout(2,2))
+print(aper4.2,vp=vplayout(2,3))
+
+print(aper1.3,vp=vplayout(3,1))
+print(aper3.3,vp=vplayout(3,2))
+print(aper4.3,vp=vplayout(3,3))
+
+print(aper1.4,vp=vplayout(4,1))
+print(aper3.4,vp=vplayout(4,2))
+print(aper4.4,vp=vplayout(4,3))
+
+print(aper1.5,vp=vplayout(5,1))
+print(aper3.5,vp=vplayout(5,2))
+print(aper4.5,vp=vplayout(5,3))
 
 dev.off()
 
@@ -935,20 +943,29 @@ dev.off()
 pdf("Lambda_map.pdf", height = 15, width = 8)
 
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(5,2)))
+pushViewport(viewport(layout=grid.layout(5,3)))
 vplayout<-function(x,y)
   viewport(layout.pos.row=x,layout.pos.col=y)
 
-print(l2000.1,vp=vplayout(1,1))
-print(l2075.1,vp=vplayout(1,2))
-print(l2000.2,vp=vplayout(2,1))
-print(l2075.2,vp=vplayout(2,2))
-print(l2000.3,vp=vplayout(3,1))
-print(l2075.3,vp=vplayout(3,2))
-print(l2000.4,vp=vplayout(4,1))
-print(l2075.4,vp=vplayout(4,2))
-print(l2000.5,vp=vplayout(5,1))
-print(l2075.5,vp=vplayout(5,2))
+print(lper1.1,vp=vplayout(1,1))
+print(lper3.1,vp=vplayout(1,2))
+print(lper4.1,vp=vplayout(1,3))
+
+print(lper1.2,vp=vplayout(2,1))
+print(lper3.2,vp=vplayout(2,2))
+print(lper4.2,vp=vplayout(2,3))
+
+print(lper1.3,vp=vplayout(3,1))
+print(lper3.3,vp=vplayout(3,2))
+print(lper4.3,vp=vplayout(3,3))
+
+print(lper1.4,vp=vplayout(4,1))
+print(lper3.4,vp=vplayout(4,2))
+print(lper4.4,vp=vplayout(4,3))
+
+print(lper1.5,vp=vplayout(5,1))
+print(lper3.5,vp=vplayout(5,2))
+print(lper4.5,vp=vplayout(5,3))
 
 dev.off()
 
