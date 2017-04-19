@@ -2,6 +2,21 @@
 library(msm)
 library(foreach)
 library(reshape)
+
+library(ggplot2)
+library(maptools)
+library(tidyr)
+library(plyr)
+#for mapping
+library(ggmap)
+library(maps)
+library(mapdata)
+library(colorRamps)     # for matlab.like(...)
+library(grid)
+library(arrayhelpers)
+library(gridExtra)
+library(akima) #for interpolation
+#-----------------------------
     
 fdir= "C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\"
 
@@ -293,17 +308,6 @@ lambda.mean <- readRDS("lambdamean.abs")
 
 #=====================================================
 ##  PLOT OUT
-library(ggplot2)
-library(maptools)
-library(tidyr)
-library(plyr)
-#for mapping
-library(ggmap)
-library(maps)
-library(mapdata)
-library(colorRamps)     # for matlab.like(...)
-library(grid)
-library(arrayhelpers)
 
 #sample sites to faciliate visualization
 site.ind=sort(base::sample(1:nrow(pts.sel),200))
@@ -440,7 +444,7 @@ site.ind=sort(base::sample(1:nrow(pts.sel),200))
   #fig6= grid_arrange_shared_legend(f1,f2,f3,f4,f5, ncol = 3, nrow = 2)  
   setwd(paste(fdir,"figures\\", sep=""))
   
-  pdf("FigJadTpupTad.pdf", height=4, width=10)
+  pdf("Fig1_FigJadTpupTad.pdf", height=4, width=10)
   grid.arrange(plot.Jad, plot.Tpup, plot.Tad, ncol = 3)
   dev.off()
 
@@ -481,7 +485,7 @@ site.ind=sort(base::sample(1:nrow(pts.sel),200))
   fc$elevation= cut(fc$elev, breaks=3)
   
   #restrict years
-  fc= fc[which(fc$year %in% c(1980,2010,2040) ),]
+  fc= fc[which(fc$year %in% c(1980,2010,2040,2070) ),]
   fc$abs= abs[as.numeric(fc$abs)]  
   
   fc1= ddply(fc, .(elevation,year,abs), summarize, lambda=mean(lambda,na.rm=TRUE))
@@ -491,7 +495,7 @@ site.ind=sort(base::sample(1:nrow(pts.sel),200))
   
   #-------------------
   setwd(paste(fdir,"figures\\",sep="") )
-  pdf("FitnessCurves_elevs.pdf", height = 8, width = 8)
+  pdf("Fig2_FitnessCurves_elevs.pdf", height = 8, width = 8)
   
   print(fcmap2)
   
@@ -518,7 +522,12 @@ site.ind=sort(base::sample(1:nrow(pts.sel),200))
   abs.opt.init3= cbind(pts.sel,abs.opt.init3)
   abs.opt.init3$period=20112040
   
-  abs.opt.init= rbind(abs.opt.init1, abs.opt.init2, abs.opt.init3 )
+  abs.opt.init4 <- colMeans(abs.opt[which(years %in% 2041:2070),,], na.rm = TRUE)
+  colnames(abs.opt.init4)= c("gen1","gen2","gen3")
+  abs.opt.init4= cbind(pts.sel,abs.opt.init4)
+  abs.opt.init4$period=20412070
+  
+  abs.opt.init= rbind(abs.opt.init1, abs.opt.init2, abs.opt.init3, abs.opt.init4 )
   
   #----------
   abso <- melt(abs.opt.init, value.name='abs',variable.name='gen',  measure.vars=c("gen1","gen2","gen3"))
@@ -581,9 +590,9 @@ l3$year= years[l3$year]
 
 #add scenario
 scens= c("plast0evol0", "plast1evol0", "plast0evol1", "plast1evol1", "plast1evol1rnevol1")
-l1$scen= scens[l1$scen]
-l2$scen= scens[l2$scen]
-l3$scen= scens[l3$scen]
+l1$scen= scens[l1$scen+1]
+l2$scen= scens[l2$scen+1]
+l3$scen= scens[l3$scen+1]
 
 #PLOT
 #Specify generation
@@ -600,11 +609,14 @@ lg$period= as.factor(lg$period)
 #remove l1$period==NA
 lg= lg[which(!is.na(lg$period)),]
 
+#order scenarios
+lg$scen= factor(lg$scen, levels=c("plast1evol0", "plast0evol1", "plast1evol1", "plast1evol1rnevol1") )
+
 #group
 lg.per= ddply(lg, .(period,elev,site,scen), summarize, lambda=mean(lambda,na.rm=TRUE))
 
 #plot
-ggplot(lg.per)+aes(x = elev, y = lambda, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()
+lambda.scen= ggplot(lg.per)+aes(x = elev, y = lambda, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()
 
 #====================================
 #Compare absorptivities
@@ -673,7 +685,23 @@ lg= lg[which(!is.na(lg$period)),]
 lg.per= ddply(lg, .(period,elev,site,scen), summarize, abs=mean(abs,na.rm=TRUE))
 
 #plot
-ggplot(lg.per)+aes(x = elev, y = abs, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()
+abs.scen= ggplot(lg.per)+aes(x = elev, y = abs, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()
+
+#-----------------------
+#Lambda and abs by scenario
+
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Fig4_Lambda_Abs_scen.pdf", height = 12, width = 12)
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(2,1)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(lambda.scen,vp=vplayout(1,1))
+print(abs.scen,vp=vplayout(2,1))
+
+dev.off()
 
 #==================================================
 #PLOT ABS TIME SERIES
@@ -794,10 +822,10 @@ for(scen.k in 1:5){
 } #end scen loop
 
 #-----------------------
-#ABS WITH PLASTICITY
+#FIG 5: ABS WITH PLASTICITY
 
 setwd(paste(fdir,"figures\\",sep="") )
-pdf("Abs_year.pdf", height = 12, width = 12)
+pdf("FigSX_Abs_year.pdf", height = 12, width = 12)
 
 grid.newpage()
 pushViewport(viewport(layout=grid.layout(4,3)))
@@ -838,6 +866,7 @@ per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims =
 
 #translate to difference from 1981-2010 for no plasticity or evolution
 lper1s= per1-per2[,1]
+lper2s= per2-per2[,1]
 lper3s= per3-per2[,1]
 lper4s= per4-per2[,1]
 
@@ -852,8 +881,19 @@ per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims =
 
 #translate to difference from 1981-2010 for no plasticity or evolution
 aper1s= per1-per2[,1]
+aper2s= per2-per2[,1]
 aper3s= per3-per2[,1]
 aper4s= per4-per2[,1]
+
+#determine breaks
+l.breaks= rbind(lper1s, lper2s, lper3s, lper4s)
+l.breaks=quantile(l.breaks, probs=seq(0,1,0.1))
+
+a.breaks= rbind(aper1s, aper2s, aper3s, aper4s)
+a.breaks=quantile(a.breaks, probs=seq(0,1,0.1))
+
+l.lab= round(l.breaks, digits=2)
+a.lab= round(a.breaks, digits=2)
 
 #-------------------------------------------
 #MAP
@@ -863,10 +903,12 @@ for(scen.k in 1:5){
   #LAMBDA
   #Set up data
   lper1= cbind(pts.sel, lper1s[,scen.k])
+  lper2= cbind(pts.sel, lper2s[,scen.k])
   lper3= cbind(pts.sel, lper3s[,scen.k])
   lper4= cbind(pts.sel, lper4s[,scen.k])
   
   names(lper1)[9]="lambda"
+  names(lper2)[9]="lambda"
   names(lper3)[9]="lambda"
   names(lper4)[9]="lambda"
                     
@@ -875,18 +917,21 @@ for(scen.k in 1:5){
   map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
   map1=ggmap(map_loc, margins=FALSE)
   
-  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.6,1.4))+ coord_fixed() + theme(legend.position="bottom")
-  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.6,1.4))+ coord_fixed() + theme(legend.position="bottom")
-  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.6,1.4))+ coord_fixed() + theme(legend.position="bottom")
+  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
+  lper2.map<- map1 + geom_raster(data=lper2, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
+  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
+  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
   
   #-------------
   #ABS
   #Set up data
   aper1= cbind(pts.sel, aper1s[,scen.k])
+  aper2= cbind(pts.sel, aper2s[,scen.k])
   aper3= cbind(pts.sel, aper3s[,scen.k])
   aper4= cbind(pts.sel, aper4s[,scen.k])
   
   names(aper1)[9]="abs"
+  names(aper2)[9]="abs"
   names(aper3)[9]="abs"
   names(aper4)[9]="abs"
   
@@ -895,81 +940,73 @@ for(scen.k in 1:5){
   map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
   map1=ggmap(map_loc, margins=FALSE)
   
-  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.08,0.18))+ coord_fixed() + theme(legend.position="bottom")
-  aper3.map<- map1 + geom_raster(data=aper3, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.08,0.18))+ coord_fixed() + theme(legend.position="bottom")
-  aper4.map<- map1 + geom_raster(data=aper4, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), limits=c(-0.08,0.18))+ coord_fixed() + theme(legend.position="bottom")
+  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
+  aper2.map<- map1 + geom_raster(data=aper2, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
+  aper3.map<- map1 + geom_raster(data=aper3, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
+  aper4.map<- map1 + geom_raster(data=aper4, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
   
   #----------
-  if(scen.k==1) {lper1.1=lper1.map; aper1.1=aper1.map; lper3.1=lper3.map; aper3.1=aper3.map; lper4.1=lper4.map; aper4.1=aper4.map}
-  if(scen.k==2) {lper1.2=lper1.map; aper1.2=aper1.map; lper3.2=lper3.map; aper3.2=aper3.map; lper4.2=lper4.map; aper4.2=aper4.map}
-  if(scen.k==3) {lper1.3=lper1.map; aper1.3=aper1.map; lper3.3=lper3.map; aper3.3=aper3.map; lper4.3=lper4.map; aper4.3=aper4.map}
-  if(scen.k==4) {lper1.4=lper1.map; aper1.4=aper1.map; lper3.4=lper3.map; aper3.4=aper3.map; lper4.4=lper4.map; aper4.4=aper4.map}
-  if(scen.k==5) {lper1.5=lper1.map; aper1.5=aper1.map; lper3.5=lper3.map; aper3.5=aper3.map; lper4.5=lper4.map; aper4.5=aper4.map}
+  if(scen.k==1) {lper1.1=lper1.map; aper1.1=aper1.map;lper2.1=lper2.map; aper2.1=aper2.map; lper3.1=lper3.map; aper3.1=aper3.map; lper4.1=lper4.map; aper4.1=aper4.map}
+  if(scen.k==2) {lper1.2=lper1.map; aper1.2=aper1.map;lper2.2=lper2.map; aper2.2=aper2.map; lper3.2=lper3.map; aper3.2=aper3.map; lper4.2=lper4.map; aper4.2=aper4.map}
+  if(scen.k==3) {lper1.3=lper1.map; aper1.3=aper1.map;lper2.3=lper2.map; aper2.3=aper2.map; lper3.3=lper3.map; aper3.3=aper3.map; lper4.3=lper4.map; aper4.3=aper4.map}
+  if(scen.k==4) {lper1.4=lper1.map; aper1.4=aper1.map;lper2.4=lper2.map; aper2.4=aper2.map; lper3.4=lper3.map; aper3.4=aper3.map; lper4.4=lper4.map; aper4.4=aper4.map}
+  if(scen.k==5) {lper1.5=lper1.map; aper1.5=aper1.map;lper2.5=lper2.map; aper2.5=aper2.map; lper3.5=lper3.map; aper3.5=aper3.map; lper4.5=lper4.map; aper4.5=aper4.map}
   
 } #end scen loop
+#----------------------------
+
+grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, position = c("right")) {
+  
+  plots <- list(...)
+  position <- match.arg(position)
+  g <- ggplotGrob(plots[[1]] + theme(legend.position = position))$grobs
+  legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+  lheight <- sum(legend$height)
+  lwidth <- sum(legend$width)
+  gl <- lapply(plots, function(x) x + theme(legend.position="none"))
+  gl <- c(gl, ncol = ncol, nrow = nrow)
+  
+  combined <- switch(position,
+                     "bottom" = arrangeGrob(do.call(arrangeGrob, gl),
+                                            legend,
+                                            ncol = 1,
+                                            heights = unit.c(unit(1, "npc") - lheight, lheight)),
+                     "right" = arrangeGrob(do.call(arrangeGrob, gl),
+                                           legend,
+                                           ncol = 2,
+                                           widths = unit.c(unit(1, "npc") - lwidth, lwidth)))
+  
+  grid.newpage()
+  grid.draw(combined)
+  
+  # return gtable invisibly
+  invisible(combined)
+  
+}
 
 #-------------------
+
+#FIG. 5: ABS MAP
 setwd(paste(fdir,"figures\\",sep="") )
-pdf("Abs_map.pdf", height = 15, width = 8)
+pdf("Fig5_Abs_map.pdf", height = 4, width = 8)
 
-grid.newpage()
-pushViewport(viewport(layout=grid.layout(5,3)))
-vplayout<-function(x,y)
-  viewport(layout.pos.row=x,layout.pos.col=y)
-
-print(aper1.1,vp=vplayout(1,1))
-print(aper3.1,vp=vplayout(1,2))
-print(aper4.1,vp=vplayout(1,3))
-
-print(aper1.2,vp=vplayout(2,1))
-print(aper3.2,vp=vplayout(2,2))
-print(aper4.2,vp=vplayout(2,3))
-
-print(aper1.3,vp=vplayout(3,1))
-print(aper3.3,vp=vplayout(3,2))
-print(aper4.3,vp=vplayout(3,3))
-
-print(aper1.4,vp=vplayout(4,1))
-print(aper3.4,vp=vplayout(4,2))
-print(aper4.4,vp=vplayout(4,3))
-
-print(aper1.5,vp=vplayout(5,1))
-print(aper3.5,vp=vplayout(5,2))
-print(aper4.5,vp=vplayout(5,3))
+grid_arrange_shared_legend(aper1.3,aper2.3,aper3.3,aper4.3,aper1.4,aper2.4,aper3.4,aper4.4,aper1.5,aper2.5,aper3.5,aper4.5, ncol = 4, nrow = 3)
 
 dev.off()
+
+# aper1.1,aper2.1,aper3.1,aper4.1,aper1.2,aper2.2,aper3.2,aper4.2,
 
 #-------------
-pdf("Lambda_map.pdf", height = 15, width = 8)
+#FIG. 6: LAMBDA MAP
 
-grid.newpage()
-pushViewport(viewport(layout=grid.layout(5,3)))
-vplayout<-function(x,y)
-  viewport(layout.pos.row=x,layout.pos.col=y)
+pdf("Fig6_Lambda_map.pdf", height = 4, width = 8)
 
-print(lper1.1,vp=vplayout(1,1))
-print(lper3.1,vp=vplayout(1,2))
-print(lper4.1,vp=vplayout(1,3))
-
-print(lper1.2,vp=vplayout(2,1))
-print(lper3.2,vp=vplayout(2,2))
-print(lper4.2,vp=vplayout(2,3))
-
-print(lper1.3,vp=vplayout(3,1))
-print(lper3.3,vp=vplayout(3,2))
-print(lper4.3,vp=vplayout(3,3))
-
-print(lper1.4,vp=vplayout(4,1))
-print(lper3.4,vp=vplayout(4,2))
-print(lper4.4,vp=vplayout(4,3))
-
-print(lper1.5,vp=vplayout(5,1))
-print(lper3.5,vp=vplayout(5,2))
-print(lper4.5,vp=vplayout(5,3))
+grid_arrange_shared_legend(lper1.3,lper2.3,lper3.3,lper4.3,lper1.4,lper2.4,lper3.4,lper4.4,lper1.5,lper2.5,lper3.5,lper4.5, ncol = 4, nrow = 3)
 
 dev.off()
 
-
+#lper1.1,lper2.1,lper3.1,lper4.1,lper1.2,lper2.2,lper3.2,lper4.2, 
+#-------------
 
 
 
