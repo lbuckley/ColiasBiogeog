@@ -317,9 +317,12 @@ site.ind=sort(base::sample(1:nrow(pts.sel),200))
 #Fig 1. elev vs year for Jadult, Tpup, Tad    
   
   #dim(pup.temps)= 12 150 841 3
-  
+
+#Loop generations
+for(gen in 1:3){
+
   #Jadult 1st gen
-  phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) ) 
+  phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,gen]) ) 
   #subset points
   #phen= phen[site.ind,]
   
@@ -338,12 +341,12 @@ site.ind=sort(base::sample(1:nrow(pts.sel),200))
   elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
   
   #plot single years and elevs to test
-  phen2= phen[phen$year==1960, ]
-  plot(phen2$elev, phen2$Jadult)
+#  phen2= phen[phen$year==1960, ]
+#  plot(phen2$elev, phen2$Jadult)
   
   #scatter plot
-  plot(years, phen[160,9:158])
-  plot(pts.sel$elev, phen[,130])
+#  plot(years, phen[160,9:158])
+#  plot(pts.sel$elev, phen[,130])
   
   #------------------
   
@@ -361,11 +364,10 @@ site.ind=sort(base::sample(1:nrow(pts.sel),200))
     geom_tile() + 
     scale_fill_distiller(palette="Spectral", na.value="white", name="Jadult") +
     theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
-  #geom_contour(color = "white", alpha = 0.5) + 
-  plot.Jad
+ 
   #============================================================================
   #Tpup
-  phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) ) 
+  phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,gen]) ) 
   phen= gather(phen, "year", "Tpup",9:(length(years)+8))
   phen$year= years[as.numeric(phen$year)]
   
@@ -396,12 +398,10 @@ site.ind=sort(base::sample(1:nrow(pts.sel),200))
     geom_tile() + 
     scale_fill_distiller(palette="Spectral", na.value="white", name="Tpup") +
     theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
-  #geom_contour(color = "white", alpha = 0.5) + 
-  plot.Tpup
   
   #------------------------------------
   #Tad
-  phen= cbind(pts.sel, t(pup.temps["Tad",inds,,1]) ) 
+  phen= cbind(pts.sel, t(pup.temps["Tad",inds,,gen]) ) 
   phen= gather(phen, "year", "Tad",9:(length(years)+8))
   phen$year= years[as.numeric(phen$year)]
   
@@ -435,8 +435,13 @@ site.ind=sort(base::sample(1:nrow(pts.sel),200))
     geom_tile() + 
     scale_fill_distiller(palette="Spectral", na.value="white", name="Tad") +
     theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
-  #geom_contour(color = "white", alpha = 0.5) + 
-  plot.Tad
+  
+  
+  if(gen==1){plot.Jad1=plot.Jad; plot.Tpup1=plot.Tpup; plot.Tad1=plot.Tad}
+  if(gen==2){plot.Jad2=plot.Jad; plot.Tpup2=plot.Tpup; plot.Tad2=plot.Tad}
+  if(gen==3){plot.Jad3=plot.Jad; plot.Tpup3=plot.Tpup; plot.Tad3=plot.Tad}
+  
+} #end loop generations
   
   #------------------------------------
   # plot together
@@ -444,8 +449,8 @@ site.ind=sort(base::sample(1:nrow(pts.sel),200))
   #fig6= grid_arrange_shared_legend(f1,f2,f3,f4,f5, ncol = 3, nrow = 2)  
   setwd(paste(fdir,"figures\\", sep=""))
   
-  pdf("Fig1_FigJadTpupTad.pdf", height=4, width=10)
-  grid.arrange(plot.Jad, plot.Tpup, plot.Tad, ncol = 3)
+  pdf("Fig1_FigJadTpupTad.pdf", height=10, width=10)
+  grid.arrange(plot.Jad1, plot.Tpup1, plot.Tad1,plot.Jad2, plot.Tpup2, plot.Tad2,plot.Jad3, plot.Tpup3, plot.Tad3, ncol = 3, nrow=3)
   dev.off()
 
 #=======================================
@@ -1007,6 +1012,23 @@ dev.off()
 
 #lper1.1,lper2.1,lper3.1,lper4.1,lper1.2,lper2.2,lper3.2,lper4.2, 
 #================================
+
+#DISPERSAL
+#Data from Watt et al. 1977, 1979
+
+#Packages: fishmove, dispkernals
+
+#Dispersal kernals across lattices: http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2011.00117.x/full
+#https://www.r-bloggers.com/continuous-dispersal-on-a-discrete-lattice/
+#https://rdrr.io/rforge/ecomodtools/man/LatticeTransitionProbs.html
+
+
+
+
+
+
+
+
 
 
 
