@@ -32,7 +32,7 @@ projs=c("bcc-csm","ccsm4","gfdl")
 #Evolution: update trait value
 ## Lambda[yr.k, cell.k, abs.k, gen.k, 1]
 
-ngens=3
+ngens=2 #run two gens or adjust by elevation?
 
 years= 1950:2099
 
@@ -139,6 +139,8 @@ abs.mean[1,,1,,3]= slope_plast
 dimnames(abs.mean)[[5]]= c("abssample", "absmid", "rn", "Babsmid", "Brn") 
 
 lambda.mean= array(NA, dim=c(length(years),nrow(pts.sel), 3, 5)) #dims: yr.k, cell.k, gen.k, scen.k:no plast, plast, only plast)
+
+BetaRN= rep(NA, nrow(pts.sel))
 #-------------------------------
 scen.mat= rbind(c(0,0,0),c(1,0,0),c(0,1,0),c(1,1,0),c(1,1,1) )
 colnames(scen.mat)= c("plast","evol","evolRN"  )
@@ -300,11 +302,11 @@ if(scen.k==5) abs.mean[yr.k,,gen.k,scen.k,"Brn"]= BetaRN
 
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 
-#saveRDS(abs.mean, "absmean.abs")
-#saveRDS(lambda.mean, "lambdamean.abs")
+saveRDS(abs.mean, "absmean.abs")
+saveRDS(lambda.mean, "lambdamean.abs")
 
-abs.mean <- readRDS("absmean.abs")
-lambda.mean <- readRDS("lambdamean.abs")
+#abs.mean <- readRDS("absmean.abs")
+#lambda.mean <- readRDS("lambdamean.abs")
 
 #=====================================================
 ##  PLOT OUT
@@ -318,16 +320,32 @@ site.ind=sort(base::sample(1:nrow(pts.sel),200))
   
   #dim(pup.temps)= 12 150 841 3
 
+#Assess number generations
+phen= cbind(pts.sel, t(pup.temps["Jadult",,,3]) ) 
+phen= gather(phen, "year", "Jadult",9:(length(years)+8))
+#count of Jadult=273
+length(which(phen$Jadult==273))/nrow(phen)
+#change 273 to NA
+phen$Jadult[which(phen$Jadult==273)]=NA
+#agregate sites that can't complete third generation
+phen2= aggregate(phen, list(phen$ind), FUN=mean, na.rm=TRUE)
+plot(phen2$elev, phen2$Jadult)
+
 #Loop generations
 for(gen in 1:3){
 
-  #Jadult 1st gen
+  #Jadult by gen
   phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,gen]) ) 
   #subset points
   #phen= phen[site.ind,]
   
   phen= gather(phen, "year", "Jadult",9:(length(years)+8))
   phen$year= years[as.numeric(phen$year)]
+  
+  #replace Jadult=273 with NA
+  phen$Jadult[which(phen$Jadult==273)]=NA
+  #remove NAs
+  phen= phen[which(!is.na(phen$Jadult)),]
   
   #sort by elevation
   ord= order(pts.sel$elev)
