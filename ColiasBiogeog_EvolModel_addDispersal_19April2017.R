@@ -32,7 +32,7 @@ projs=c("bcc-csm","ccsm4","gfdl")
 #Evolution: update trait value
 ## Lambda[yr.k, cell.k, abs.k, gen.k, 1]
 
-ngens=2 #run two gens or adjust by elevation?
+ngens=3 #adjust by elevation?
 
 years= 1950:2099
 
@@ -153,6 +153,7 @@ for(yr.k in 1:length(years)) {
     BetaAbsmid=NA
     
     Lambda.yr.gen= Lambda[yr.k, , , gen.k, ]
+    # colSums(!is.na(Lambda[, , 1, 3, 1])) #CHECK NA counts
 
     #determine those completing generations
     comp.gen= which(pup.temps["Jadult",yr.k,,gen.k]<273)
@@ -191,12 +192,12 @@ for(yr.k in 1:length(years)) {
     if(gen.k==1) abs.mean1= abs.mean[yr.k,l.no.na,gen.k,scen.k,"absmid"]
     if(gen.k>1) abs.mean1= abs.mean[yr.k,l.no.na,gen.k-1,scen.k,"absmid"]
     
-    #change NA values to negative values 
+   #change NA values to negative values 
     abs.na.inds= abs.mean1[which( is.na(abs.mean1))]
     rn.na.inds= rn.mean1[which( is.na(rn.mean1))]
     
-    #check abs mean
-    if(!all(is.na(abs.mean1))){
+ #   #check abs mean
+#    if(!all(is.na(abs.mean1))){
     
     abs.mean1[which( is.na(abs.mean1))]= -10 
     rn.mean1[which( is.na(rn.mean1))]= -1000
@@ -228,7 +229,7 @@ for(yr.k in 1:length(years)) {
 
     R2selnAbsmid<- rep(0, length(l.no.na) ) #No response to selection if no evolution
     R2selnRN<- rep(0, length(l.no.na) ) 
-
+    #------------
     if(scen.k<5 & scen.mat[scen.k,2]==1){    
       ##selection analysis
       sel.fit= sapply(1:length(l.no.na), function(x) if(sum(is.na(x))==0) lm(rel.fit[,x]~absmid.dif[,x] +I(absmid.dif[,x]^2))$coefficients)
@@ -241,7 +242,7 @@ for(yr.k in 1:length(years)) {
       BetaAbsmid <-sel.fit[2,]
       R2selnAbsmid <- h2*(abs.sd^2)*BetaAbsmid
     } #end scen.k<5
-
+#------------
     if(scen.k==5){    
       ##selection analysis
       sel.fit= sapply(1:length(l.no.na), function(x) if(sum(is.na(x))==0) lm(rel.fit[,x]~absmid.dif[,x] + rn.dif[,x] +I(absmid.dif[,x]^2) +I(rn.dif[,x]^2)+ rn.dif[,x]*absmid.dif[,x])$coefficients)
@@ -257,7 +258,8 @@ for(yr.k in 1:length(years)) {
     BetaRN <- sel.fit[3,] 
     R2selnRN <- h2*(rn.sd^2)*BetaRN
     } #end scen.k==5
-
+#-------------
+    
 #Response to selection
 if(gen.k<3) {
   abs.mean[yr.k,l.no.na,gen.k+1,scen.k,"absmid"]= abs.mean[yr.k,l.no.na,gen.k,scen.k,"absmid"] + R2selnAbsmid
@@ -272,9 +274,9 @@ if(gen.k<3) {
     abs.mean[yr.k,which(abs.mean[yr.k,l.no.na,gen.k+1,scen.k,"rn"]>1),gen.k+1,scen.k,"rn"]= 1
     abs.mean[yr.k,which(abs.mean[yr.k,l.no.na,gen.k+1,scen.k,"rn"]< -1),gen.k+1,scen.k,"rn"]= -1
   }
-} 
+} #end evolutionary scenarios
 
-} #check NA abs.mean1
+#} #check NA abs.mean1
 
 #Account for missing lambdas
 if(length(abs.na.inds)>0)  R2selnAbsmid[abs.na.inds]=NA    
@@ -460,11 +462,10 @@ for(gen in 1:3){
     scale_fill_distiller(palette="Spectral", na.value="white", name="Tad") +
     theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
   
-  
   if(gen==1){plot.Jad1=plot.Jad; plot.Tpup1=plot.Tpup; plot.Tad1=plot.Tad}
   if(gen==2){plot.Jad2=plot.Jad; plot.Tpup2=plot.Tpup; plot.Tad2=plot.Tad}
   if(gen==3){plot.Jad3=plot.Jad; plot.Tpup3=plot.Tpup; plot.Tad3=plot.Tad}
-  
+   
 } #end loop generations
   
   #------------------------------------
@@ -645,7 +646,8 @@ lg$scen= factor(lg$scen, levels=c("plast1evol0", "plast0evol1", "plast1evol1", "
 lg.per= ddply(lg, .(period,elev,site,scen), summarize, lambda=mean(lambda,na.rm=TRUE))
 
 #plot
-lambda.scen= ggplot(lg.per)+aes(x = elev, y = lambda, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()
+lambda.scen= ggplot(lg.per)+aes(x = elev, y = lambda, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()+ylim(-0.5,1)
+#check ylim
 
 #====================================
 #Compare absorptivities
@@ -714,7 +716,8 @@ lg= lg[which(!is.na(lg$period)),]
 lg.per= ddply(lg, .(period,elev,site,scen), summarize, abs=mean(abs,na.rm=TRUE))
 
 #plot
-abs.scen= ggplot(lg.per)+aes(x = elev, y = abs, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()
+abs.scen= ggplot(lg.per)+aes(x = elev, y = abs, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()+ylim(-0.2,0.4)
+#check ylim
 
 #-----------------------
 #Lambda and abs by scenario
@@ -743,7 +746,7 @@ for(scen.k in 1:5){
   abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
   abs.dat$year= years[as.numeric(abs.dat$year)]
   abs.dat$ecut= cut(abs.dat$elev, breaks=3)
-  abs.agg1= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.agg1= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean, na.rm=TRUE)
   abs.dat1= abs.dat
   
   gen.k=2
@@ -751,7 +754,7 @@ for(scen.k in 1:5){
   abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
   abs.dat$year= years[as.numeric(abs.dat$year)]
   abs.dat$ecut= cut(abs.dat$elev, breaks=3)
-  abs.agg2= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.agg2= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean, na.rm=TRUE)
   abs.dat2= abs.dat
   
   gen.k=3
@@ -759,16 +762,16 @@ for(scen.k in 1:5){
   abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
   abs.dat$year= years[as.numeric(abs.dat$year)]
   abs.dat$ecut= cut(abs.dat$elev, breaks=3)
-  abs.agg3= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.agg3= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean, na.rm=TRUE)
   abs.dat3= abs.dat
   
-  p.abs1all = ggplot(abs.dat1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
-  p.abs2all = ggplot(abs.dat2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
-  p.abs3all = ggplot(abs.dat3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
+  p.abs1all = ggplot(abs.dat1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))#+ylim(0.6,0.75)
+  p.abs2all = ggplot(abs.dat2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))#+ylim(0.6,0.75)
+  p.abs3all = ggplot(abs.dat3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))#+ylim(0.6,0.75)
   
-  p.abs1 = ggplot(abs.agg1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
-  p.abs2 = ggplot(abs.agg2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
-  p.abs3 = ggplot(abs.agg3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.75)
+  p.abs1 = ggplot(abs.agg1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))#+ylim(0.6,0.75)
+  p.abs2 = ggplot(abs.agg2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))#+ylim(0.6,0.75)
+  p.abs3 = ggplot(abs.agg3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))#+ylim(0.6,0.75)
   
   #Abs without plasticity
   gen.k=1
@@ -776,7 +779,7 @@ for(scen.k in 1:5){
   abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
   abs.dat$year= years[as.numeric(abs.dat$year)]
   abs.dat$ecut= cut(abs.dat$elev, breaks=3)
-  abs.agg1m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.agg1m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean, na.rm=TRUE)
   abs.dat1m= abs.dat
   
   gen.k=2
@@ -784,7 +787,7 @@ for(scen.k in 1:5){
   abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
   abs.dat$year= years[as.numeric(abs.dat$year)]
   abs.dat$ecut= cut(abs.dat$elev, breaks=3)
-  abs.agg2m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.agg2m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean, na.rm=TRUE)
   abs.dat2m= abs.dat
   
   gen.k=3
@@ -792,16 +795,16 @@ for(scen.k in 1:5){
   abs.dat= gather(abs.all, "year", "abs",9:(length(years)+8) )
   abs.dat$year= years[as.numeric(abs.dat$year)]
   abs.dat$ecut= cut(abs.dat$elev, breaks=3)
-  abs.agg3m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  abs.agg3m= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean, na.rm=TRUE)
   abs.dat3m= abs.dat
   
-  p.abs1allm = ggplot(abs.dat1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
-  p.abs2allm = ggplot(abs.dat2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
-  p.abs3allm = ggplot(abs.dat3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.5,0.80)
+  p.abs1allm = ggplot(abs.dat1, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))#+ylim(0.5,0.80)
+  p.abs2allm = ggplot(abs.dat2, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))#+ylim(0.5,0.80)
+  p.abs3allm = ggplot(abs.dat3, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))#+ylim(0.5,0.80)
   
-  p.abs1m = ggplot(abs.agg1m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
-  p.abs2m = ggplot(abs.agg2m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
-  p.abs3m = ggplot(abs.agg3m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(0.6,0.70)
+  p.abs1m = ggplot(abs.agg1m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10)) #+ylim(0.6,0.70)
+  p.abs2m = ggplot(abs.agg2m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10)) #+ylim(0.6,0.70)
+  p.abs3m = ggplot(abs.agg3m, aes(x=year, y=abs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10)) #+ylim(0.6,0.70)
   
   #Lambdas across time and elevations
   gen.k=1
@@ -809,7 +812,7 @@ for(scen.k in 1:5){
   lambda.dat= gather(lambda.all, "year", "lambda",9:(length(years)+8) )
   lambda.dat$year= years[as.numeric(lambda.dat$year)]
   lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
-  lambda.agg1= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  lambda.agg1= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean,na.rm=TRUE)
   lambda.dat1= lambda.dat
   
   gen.k=2
@@ -817,7 +820,7 @@ for(scen.k in 1:5){
   lambda.dat= gather(lambda.all, "year", "lambda",9:(length(years)+8) )
   lambda.dat$year= years[as.numeric(lambda.dat$year)]
   lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
-  lambda.agg2= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  lambda.agg2= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean,na.rm=TRUE)
   lambda.dat2= lambda.dat
   
   gen.k=3
@@ -825,7 +828,7 @@ for(scen.k in 1:5){
   lambda.dat= gather(lambda.all, "year", "lambda",9:(length(years)+8) )
   lambda.dat$year= years[as.numeric(lambda.dat$year)]
   lambda.dat$ecut= cut(lambda.dat$elev, breaks=3)
-  lambda.agg3= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+  lambda.agg3= aggregate(lambda.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean,na.rm=TRUE)
   lambda.dat3= lambda.dat
   
   p.lambda1all = ggplot(lambda.dat1, aes(x=year, y=lambda, group=X, color=elev )) +geom_smooth(method=loess,se=FALSE) +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
@@ -894,10 +897,10 @@ per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims =
 per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
-lper1s= per1-per2[,1]
-lper2s= per2-per2[,1]
-lper3s= per3-per2[,1]
-lper4s= per4-per2[,1]
+lper1s= per1 #-per2[,1]
+lper2s= per2 #-per2[,1]
+lper3s= per3 #-per2[,1]
+lper4s= per4 #-per2[,1]
 
 #ABS
 #average abs across time period
@@ -909,17 +912,17 @@ per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims =
 per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
-aper1s= per1-per2[,1]
-aper2s= per2-per2[,1]
-aper3s= per3-per2[,1]
-aper4s= per4-per2[,1]
+aper1s= per1 #-per2[,1]
+aper2s= per2 #-per2[,1]
+aper3s= per3 #-per2[,1]
+aper4s= per4 #-per2[,1]
 
 #determine breaks
 l.breaks= rbind(lper1s, lper2s, lper3s, lper4s)
-l.breaks=quantile(l.breaks, probs=seq(0,1,0.1))
+l.breaks=quantile(l.breaks, probs=seq(0,1,0.1), na.rm=TRUE)
 
 a.breaks= rbind(aper1s, aper2s, aper3s, aper4s)
-a.breaks=quantile(a.breaks, probs=seq(0,1,0.1))
+a.breaks=quantile(a.breaks, probs=seq(0,1,0.1), na.rm=TRUE)
 
 l.lab= round(l.breaks, digits=2)
 a.lab= round(a.breaks, digits=2)
@@ -1046,15 +1049,16 @@ dev.off()
 #https://www.r-bloggers.com/continuous-dispersal-on-a-discrete-lattice/
 #https://rdrr.io/rforge/ecomodtools/man/LatticeTransitionProbs.html
 
+#Analyze number generations
 
+#pts.sel # 841   8
+#Lambda[yr.k, , , gen.k, ] #150 841   7   3   4
+#pup.temps[yr.k, , , gen.k, ] # 12 150 841   3
 
+lamb= cbind(pts.sel,t(Lambda[, , 1, 1, 1]) )
 
-
-
-
-
-
-
-
+lamb[,"2015"]
+lamb[,"2023"]
+lamb[,"2024"]
 
   
