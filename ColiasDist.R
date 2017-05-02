@@ -452,27 +452,29 @@ zenith[zenith>=80]=80 #set zenith position below horizon to psi=80degrees
 #--------------------------------------------------
 #Calculate Te #cell.k: length(grid.sel)
 
-#LoopDays
-for(day.k in 1:length(dayk) ){
-  d= dayk[day.k]
+aseq= seq(0.4,0.7,0.05)
+
+for(hr.k in 1:15 ){
   
-  Thr.d= Thr[(d-151),,]
-  Ts_sun.d= Ts_sun[,,(clim[match(d,clim$J),"month"]-5)]
-  Ts_sh.d= Ts_sh[,,(clim[match(d,clim$J),"month"]-5)]
-  wind.d= wind[,,(clim[match(d,clim$J),"month"]-5)]
-  Rhr.d= Rhr[(d-151),,]
-  zenith.d= zenith[,,(clim[match(d,clim$J),"month"]-5)]
+  Thr.d= Thr[,hr.k,]
+  Ts_sun.d= Ts_sun[,hr.k,]
+  Ts_sh.d= Ts_sh[,hr.k,]
+  wind.d= wind[,hr.k,]
+  Rhr.d= Rhr[,c(hr.k,hr.k+24),]
+  zenith.d= zenith[,hr.k,]
   
   #combine data
-  Te.dat=abind(t(Thr.d[6:20,]), Ts_sun.d[,6:20], Ts_sh.d[,6:20], wind.d[,6:20], t(Rhr.d[6:20,]), t(Rhr.d[30:44,]),zenith.d[,6:20],along=3)
+  Te.dat=abind(t(Thr.d), Ts_sun.d[,(clim$month-5)], Ts_sh.d[,(clim$month-5)], wind.d[,(clim$month-5)], t(Rhr.d[,1,]), t(Rhr.d[,2,]),zenith.d[,(clim$month-5)],along=3)
   
-Te.mat<-  foreach(a=seq(0.4,0.7,0.05))  %:% foreach(hr.k=1:15, .combine="cbind") %do% {
-   apply(Te.dat[,hr.k,],MARGIN=1, FUN=biophys.var_sh.mat, D, delta, a)  
-  }
-
-Te.mat.all[,,,day.k]= array(unlist(Te.mat), dim = c(nrow(Te.mat[[1]]), ncol(Te.mat[[1]]), length(Te.mat)))
+  for(a.k in 1:7){
   
-} # end loop across days
+  a= aseq[a.k]
+  Te.mat.all[,hr.k,a.k,]<-  apply(Te.dat,MARGIN=c(1,2), FUN=biophys.var_sh.mat, D, delta, a)  
+  
+  } # end loop across absorptivities
+} # end loop across hours
+ 
+#Fix Te NAs
 
 #=======================================
 #DEMOGRAPHY
@@ -547,7 +549,7 @@ for(abs.k in 1:dim(Te.mat.all)[3] ){ #loop absorptivity
         Lambda1= Lambda1+ SurvMat * SurvDaily^day *Eggs1;                        
       }#end loop days
       
-      Lambda[yr.k, cell.k, abs.k, gen.k, 1]=  
+      Lambda[yr.k, cell.k, abs.k, gen.k, 1]= Lambda1 
       Lambda[yr.k, cell.k, abs.k, gen.k, 2]= mean(FAT.ind) #FAT
       Lambda[yr.k, cell.k, abs.k, gen.k, 3]= mean(ev.ind) #egg viability
       Lambda[yr.k, cell.k, abs.k, gen.k, 4]= mean(T.ind, na.rm=T) #Temp
@@ -679,6 +681,27 @@ colnames(tmax2)[1:2]=c("yr","elev")
 ggplot(tmax2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(method=loess,se=FALSE)
 #ggplot(tmax2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_line()
 
+#============================================================
+#Load and check pupal tempertures and lambdas
 
+#Read lambdas and pupal temps
+setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\3gen_rds")
 
+Lambda <- readRDS( paste("lambda1_",projs[proj.k],".rds", sep="") )
+#last dim: lambda, FAT, egg viability, temp
+
+pup.temps <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
+#first dim:  stat          yr         gen       Jlarv        Jpup      Jadult       Tlarv  Tpup         Tad Tlarv_fixed  Tpup_fixed   Tad_fixed 
+
+summary(pup.temps[,1,,3])
+
+na_count <-function (x) sapply(x, function(y) sum(is.na(y)))
+
+#No NAs in pupal temps
+nas= na_count(pup.temps[9,,,3])
+sum(nas)
+
+# NAs in lambdas
+nas= na_count(Lambda[9,,3,1,4])
+sum(nas)
 

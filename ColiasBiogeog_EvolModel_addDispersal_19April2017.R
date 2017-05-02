@@ -131,6 +131,18 @@ points(elev_km, abs.init2)
 #Use optimal
 abs.init<- abs.init2
 
+#----------------------------
+#Plot number generations by elevation
+
+Lambda.yr.gen= Lambda[yr.k, , , gen.k, ] #150 841   7   3   4
+# colSums(!is.na(Lambda[, , 1, 3, 1])) #CHECK NA counts
+
+lgens= Lambda[, , 3, 3, 1]
+lgens= cbind(pts.sel, t(lgens) )
+lgens$lambda= lgens[,16]
+
+ggplot(lgens, aes(x=elev, y=lambda)) +geom_point() 
+
 #-----------------------
 #Save values
 abs.mean= array(NA, dim=c(length(years),nrow(pts.sel), 3, 5,5))  #dims: yr.k, cell.k, gen.k, scen.k:no plast, plast, only plast, metrics: abssample, absmid, rn, Babsmid, Brn)
