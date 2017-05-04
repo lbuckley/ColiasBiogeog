@@ -312,10 +312,12 @@ dimnames(pup.temps)[[1]]= c("stat","yr","gen","Jlarv", "Jpup","Jadult","Tlarv","
 dayk= 152:243
 Te.mat.all= array(data=NA, dim=c(nrow(pts.sel), length(6:20),7, length(dayk) ) )
 
+aseq= seq(0.4,0.7,0.05)
+
 #===================================================================
 #LOOP YEARS
 
-for(yr.k in 1:length(years) ){
+for(yr.k in 20:length(years) ){
 print(yr.k)
   
 inds= which(time.mat[,2]==years[yr.k])
@@ -452,8 +454,6 @@ zenith[zenith>=80]=80 #set zenith position below horizon to psi=80degrees
 #--------------------------------------------------
 #Calculate Te #cell.k: length(grid.sel)
 
-aseq= seq(0.4,0.7,0.05)
-
 for(hr.k in 1:15 ){
   
   Thr.d= Thr[,hr.k,]
@@ -474,8 +474,6 @@ for(hr.k in 1:15 ){
   } # end loop across absorptivities
 } # end loop across hours
  
-#Fix Te NAs
-
 #=======================================
 #DEMOGRAPHY
 
@@ -494,20 +492,22 @@ EggViab.all= array(unlist(EggViab), dim = c(nrow(EggViab[[1]][[1]]), ncol(EggVia
 
 EV1=matrix(NA,2, nrow(SpecDat))
 
-for(cell.k in 1:nrow(pts.sel) ){ #loop cells
- # if(cell.k/100==round(cell.k/100)) print(cell.k)
-  
-for(abs.k in 1:dim(Te.mat.all)[3] ){ #loop absorptivity
- 
-  Te.mat= Te.mat.all[cell.k,,abs.k,]
-  
   for(gen.k in 1:3 ){ #loop generation
-     
-    #get flight dates
-    Jfl=pup.temps["Jadult",yr.k, cell.k, gen.k] 
+  
+    #find cells that can complete generation
+    Jfls=pup.temps["Jadult",yr.k,, gen.k] 
+    cell.inds= which(Jfls<244 & Jfls>151)
     
-    if(Jfl<244 & Jfl>151){ #Check flight date
-
+    for(cell.k in cell.inds ){ #loop cells
+      # if(cell.k/100==round(cell.k/100)) print(cell.k)
+      
+      for(abs.k in 1:dim(Te.mat.all)[3] ){ #loop absorptivity
+        
+      Te.mat= Te.mat.all[cell.k,,abs.k,]
+      
+      #get flight dates
+      Jfl=pup.temps["Jadult",yr.k, cell.k, gen.k]   
+   
     #average over hours
     FAT= rowSums(FlightProb.all[cell.k,,,abs.k], na.rm=TRUE)
     EggViab= apply(EggViab.all[cell.k,,,abs.k], FUN=geo_mean, MARGIN=1) #Egg viability GEOMETRIC MEAN ACROSS HOURS
@@ -549,18 +549,14 @@ for(abs.k in 1:dim(Te.mat.all)[3] ){ #loop absorptivity
         Lambda1= Lambda1+ SurvMat * SurvDaily^day *Eggs1;                        
       }#end loop days
       
-      Lambda[yr.k, cell.k, abs.k, gen.k, 1]= Lambda1 
-      Lambda[yr.k, cell.k, abs.k, gen.k, 2]= mean(FAT.ind) #FAT
-      Lambda[yr.k, cell.k, abs.k, gen.k, 3]= mean(ev.ind) #egg viability
-      Lambda[yr.k, cell.k, abs.k, gen.k, 4]= mean(T.ind, na.rm=T) #Temp
+      Lambda[yr.k, cell.k, abs.k, gen.k, ]= c(Lambda1, mean(FAT.ind), mean(ev.ind), mean(T.ind, na.rm=T) ) 
+     
     } #Check Eggs
-    } #End check Jfl
-    
+
+      } #end loop absortivity
+    } #end loop cells    
   } #end loop generation
   
-} #end loop absortivity
-} #end loop cells
-
 #Save every 30 years
 if(yr.k/30== round(yr.k/30)){
 #SAVE OBJECT
@@ -687,7 +683,7 @@ ggplot(tmax2, aes(x=yr, y=temp, group=elev, color=elev) ) +geom_smooth(method=lo
 #Read lambdas and pupal temps
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\3gen_rds")
 
-Lambda <- readRDS( paste("lambda1_",projs[proj.k],".rds", sep="") )
+Lambda_old <- readRDS( paste("lambda1_",projs[proj.k],".rds", sep="") )
 #last dim: lambda, FAT, egg viability, temp
 
 pup.temps <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
@@ -705,3 +701,14 @@ sum(nas)
 nas= na_count(Lambda[9,,3,1,4])
 sum(nas)
 
+#------------
+#pts.sel # 841   8
+#Lambda[yr.k, , , gen.k, ] #150 841   7   3   4
+#pup.temps[yr.k, , , gen.k, ] # 12 150 841   3
+
+lamb= cbind(pts.sel,t(Lambda[1:20, , 3, 2, 1]) )
+
+pup.temps[6, 1:20, , 2]
+
+Lambda_old[1, , 3, 2, 1]
+Lambda[1, , 3, 2, 1]
