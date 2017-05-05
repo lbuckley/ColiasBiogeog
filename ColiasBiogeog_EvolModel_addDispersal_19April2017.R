@@ -57,6 +57,8 @@ pts.sel= read.csv( paste("COpoints.csv", sep="") ) #_",projs[proj.k],"
   
 #Read lambdas and pupal temps
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+#previous version
+#setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\3gen_rds")
 
 Lambda <- readRDS( paste("lambda1_",projs[proj.k],".rds", sep="") )
 pup.temps <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
@@ -137,7 +139,7 @@ abs.init<- abs.init2
 Lambda.yr.gen= Lambda[yr.k, , , gen.k, ] #150 841   7   3   4
 # colSums(!is.na(Lambda[, , 1, 3, 1])) #CHECK NA counts
 
-lgens= Lambda[, , 3, 3, 1]
+lgens= Lambda[, , 3, 2, 1]
 lgens= cbind(pts.sel, t(lgens) )
 lgens$lambda= lgens[,16]
 
@@ -168,15 +170,15 @@ for(yr.k in 1:length(years)) {
     # colSums(!is.na(Lambda[, , 1, 3, 1])) #CHECK NA counts
 
     #determine those completing generations
-    comp.gen= which(pup.temps["Jadult",yr.k,,gen.k]<273)
-    nocomp.gen= which(pup.temps["Jadult",yr.k,,gen.k]==273)
+    comp.gen= which(pup.temps["Jadult",yr.k,,gen.k]<243)
+    nocomp.gen= which(pup.temps["Jadult",yr.k,,gen.k]==243)
     #set those not completing generations to NA
     if(length(nocomp.gen)>0) Lambda.yr.gen[nocomp.gen,,]=NA
     
     #account for NA lambdas
     l.no.na= which(!is.na(Lambda.yr.gen[,1,1]))
     
- # if(all(!is.na(Lambda.yr.gen))){ #FIX TO DEAL WITH NAs
+  if(length(l.no.na)>0){ #CHECK LAMBDA DATA EXISTS
    
      #Extract temperatures
     Tp= pup.temps["Tpup",yr.k,l.no.na, gen.k]
@@ -288,8 +290,6 @@ if(gen.k<3) {
   }
 } #end evolutionary scenarios
 
-#} #check NA abs.mean1
-
 #Account for missing lambdas
 if(length(abs.na.inds)>0)  R2selnAbsmid[abs.na.inds]=NA    
 if(length(rn.na.inds)>0)   R2selnRN[rn.na.inds]=NA  
@@ -311,7 +311,9 @@ abs.mean[yr.k,l.no.na,gen.k,scen.k,"Babsmid"]= BetaAbsmid
 if(scen.k==5) abs.mean[yr.k,l.no.na,gen.k,scen.k,"Brn"]= BetaRN
 
 } #end scen loop
-
+    
+  } #Check lambda values exist
+    
   } #end generation
   print(yr.k)
 } #end year 
@@ -486,10 +488,11 @@ for(gen in 1:3){
   #fig6= grid_arrange_shared_legend(f1,f2,f3,f4,f5, ncol = 3, nrow = 2)  
   setwd(paste(fdir,"figures\\", sep=""))
   
-  pdf("Fig1_FigJadTpupTad.pdf", height=10, width=10)
-  grid.arrange(plot.Jad1, plot.Tpup1, plot.Tad1,plot.Jad2, plot.Tpup2, plot.Tad2,plot.Jad3, plot.Tpup3, plot.Tad3, ncol = 3, nrow=3)
+  pdf("Fig1_FigJadTpupTad.pdf", height=7, width=10)
+  grid.arrange(plot.Jad1, plot.Tpup1, plot.Tad1,plot.Jad2, plot.Tpup2, plot.Tad2, ncol = 3, nrow=2)
   dev.off()
-
+# plot.Jad3, plot.Tpup3, plot.Tad3,
+  
 #=======================================
   
 #Fig 2. PLOT FITNESS CURVES
@@ -533,7 +536,7 @@ for(gen in 1:3){
   fc1= ddply(fc, .(elevation,year,abs), summarize, lambda=mean(lambda,na.rm=TRUE))
   fc1$year= as.factor(fc1$year)
 
-  fcmap2 = ggplot(fc1, aes(x=abs, y=lambda, color=elevation, lty=year)) +geom_line(lwd=1) +theme_bw()+ theme(legend.position = "bottom")
+  fcmap2 = ggplot(fc1, aes(x=abs, y=lambda, color=elevation, lty=year)) +geom_line(lwd=1) +theme_bw()+ theme(legend.position = "bottom")+ylim(1,3.25)
   
   #-------------------
   setwd(paste(fdir,"figures\\",sep="") )
@@ -579,10 +582,13 @@ for(gen in 1:3){
   
   abso$period=as.factor(abso$period)
   
+  #restrict to first two generations
+  abso= abso[which(abso$gen %in% c("gen1","gen2")),]
+  
   #----------------------------
   #abs by gen
   setwd(paste(fdir,"figures\\",sep="") )
-  pdf("Fig3_Abs_optbyElev.pdf", height = 6, width = 12)
+  pdf("Fig3_Abs_optbyElev.pdf", height = 6, width = 8)
   ggplot(abso, aes(x=elev, y=abs, color=period) ) +geom_point(shape=1)+ facet_grid(. ~ gen) +geom_smooth(method=lm, se=FALSE)+theme_bw()+ theme(legend.position = "bottom")
   dev.off()
   
@@ -661,11 +667,36 @@ lg.per= ddply(lg, .(period,elev,site,scen), summarize, lambda=mean(lambda,na.rm=
 lambda.scen= ggplot(lg.per)+aes(x = elev, y = lambda, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()+ylim(-0.5,1)
 #check ylim
 
+#---------
+#2nd gen
+#Specify generation
+lg=l2
+
+#add time period
+lg$period=NA
+#lg$period[which(lg$year>1950 & lg$year<=1980)]= 19511980
+lg$period[which(lg$year>1980 & lg$year<=2010)]= 19812010
+lg$period[which(lg$year>2010 & lg$year<=2040)]= 20112040
+lg$period[which(lg$year>2040 & lg$year<=2070)]= 20412070
+lg$period= as.factor(lg$period)
+
+#remove l1$period==NA
+lg= lg[which(!is.na(lg$period)),]
+
+#order scenarios
+lg$scen= factor(lg$scen, levels=c("plast1evol0", "plast0evol1", "plast1evol1", "plast1evol1rnevol1") )
+
+#group
+lg.per= ddply(lg, .(period,elev,site,scen), summarize, lambda=mean(lambda,na.rm=TRUE))
+
+#plot
+lambda.scen2= ggplot(lg.per)+aes(x = elev, y = lambda, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()+ylim(-0.5,1)
+
 #====================================
 #Compare absorptivities
 
 #calculate absorptivity differences by scenario  
-lambda.diff= abs.mean[,,,,1] #use absmean
+lambda.diff= abs.mean[,,,,2] #use absmid
 lambda.diff[,,,2]= lambda.diff[,,,2]-lambda.diff[,,,1] 
 lambda.diff[,,,3]= lambda.diff[,,,3]-lambda.diff[,,,1] 
 lambda.diff[,,,4]= lambda.diff[,,,4]-lambda.diff[,,,1] 
@@ -728,7 +759,7 @@ lg= lg[which(!is.na(lg$period)),]
 lg.per= ddply(lg, .(period,elev,site,scen), summarize, abs=mean(abs,na.rm=TRUE))
 
 #plot
-abs.scen= ggplot(lg.per)+aes(x = elev, y = abs, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()+ylim(-0.2,0.4)
+abs.scen= ggplot(lg.per)+aes(x = elev, y = abs, color=period)+geom_point()+ facet_grid(. ~ scen)+ theme(legend.position = "bottom")+theme_bw()+ylim(-0.2,0.2)
 #check ylim
 
 #-----------------------
@@ -738,12 +769,13 @@ setwd(paste(fdir,"figures\\",sep="") )
 pdf("Fig4_Lambda_Abs_scen.pdf", height = 12, width = 12)
 
 grid.newpage()
-pushViewport(viewport(layout=grid.layout(2,1)))
+pushViewport(viewport(layout=grid.layout(3,1)))
 vplayout<-function(x,y)
   viewport(layout.pos.row=x,layout.pos.col=y)
 
 print(lambda.scen,vp=vplayout(1,1))
-print(abs.scen,vp=vplayout(2,1))
+print(lambda.scen2,vp=vplayout(2,1))
+print(abs.scen,vp=vplayout(3,1))
 
 dev.off()
 
@@ -914,10 +946,26 @@ lper2s= per2 #-per2[,1]
 lper3s= per3 #-per2[,1]
 lper4s= per4 #-per2[,1]
 
+#----------
+#second generation
+
+lambda.diff= lambda.mean[,,2,]
+per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = FALSE, dims = 1)
+per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = FALSE, dims = 1)
+per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims = 1)
+per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
+
+#translate to difference from 1981-2010 for no plasticity or evolution
+lper1s.gen2= per1 #-per2[,1]
+lper2s.gen2= per2 #-per2[,1]
+lper3s.gen2= per3 #-per2[,1]
+lper4s.gen2= per4 #-per2[,1]
+#----------
+
 #ABS
 #average abs across time period
 #first generation
-lambda.diff= abs.mean[,,1,,1]
+lambda.diff= abs.mean[,,1,,2]#abs mid
 per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = FALSE, dims = 1)
 per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = FALSE, dims = 1)
 per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims = 1)
@@ -965,6 +1013,7 @@ for(scen.k in 1:5){
   lper2.map<- map1 + geom_raster(data=lper2, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
   lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
   lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
+  
   
   #-------------
   #ABS
@@ -1034,11 +1083,31 @@ grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, 
 setwd(paste(fdir,"figures\\",sep="") )
 pdf("Fig5_Abs_map.pdf", height = 4, width = 8)
 
-grid_arrange_shared_legend(aper1.3,aper2.3,aper3.3,aper4.3,aper1.4,aper2.4,aper3.4,aper4.4,aper1.5,aper2.5,aper3.5,aper4.5, ncol = 4, nrow = 3)
-
-dev.off()
+#grid_arrange_shared_legend(aper1.3,aper2.3,aper3.3,aper4.3,aper1.4,aper2.4,aper3.4,aper4.4,aper1.5,aper2.5,aper3.5,aper4.5, ncol = 4, nrow = 3)
 
 # aper1.1,aper2.1,aper3.1,aper4.1,aper1.2,aper2.2,aper3.2,aper4.2,
+
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(3,4)))
+vplayout<-function(x,y)
+  viewport(layout.pos.row=x,layout.pos.col=y)
+
+print(aper1.3,vp=vplayout(1,1))
+print(aper2.3,vp=vplayout(2,1))
+print(aper3.3,vp=vplayout(3,1))
+print(aper4.3,vp=vplayout(4,1))
+
+print(aper1.4,vp=vplayout(1,2))
+print(aper2.4,vp=vplayout(2,2))
+print(aper3.4,vp=vplayout(3,2))
+print(aper4.4,vp=vplayout(4,2))
+
+print(aper1.5,vp=vplayout(1,3))
+print(aper2.5,vp=vplayout(2,3))
+print(aper3.5,vp=vplayout(3,3))
+print(aper4.5,vp=vplayout(4,3))
+
+dev.off()
 
 #-------------
 #FIG. 6: LAMBDA MAP
