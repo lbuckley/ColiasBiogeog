@@ -60,8 +60,11 @@ setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 #previous version
 #setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\3gen_rds")
 
-Lambda <- readRDS( paste("lambda1_",projs[proj.k],".rds", sep="") )
-pup.temps <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
+#Lambda <- readRDS( paste("lambda1_",projs[proj.k],".rds", sep="") )
+#pup.temps <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
+##recent versions
+Lambda <- readRDS( paste("lambda1_May12_",projs[proj.k],".rds", sep="") )
+pup.temps <- readRDS( paste("PupTemps_May12_",projs[proj.k],".rds", sep="") )
 
 #Find years with calculations
 counts= rowSums(is.na(pup.temps[6,,,1]))
@@ -484,8 +487,6 @@ for(gen in 1:3){
   
   #------------------------------------
   # plot together
-  
-  #fig6= grid_arrange_shared_legend(f1,f2,f3,f4,f5, ncol = 3, nrow = 2)  
   setwd(paste(fdir,"figures\\", sep=""))
   
   pdf("Fig1_FigJadTpupTad.pdf", height=7, width=10)
@@ -536,7 +537,7 @@ for(gen in 1:3){
   fc1= ddply(fc, .(elevation,year,abs), summarize, lambda=mean(lambda,na.rm=TRUE))
   fc1$year= as.factor(fc1$year)
 
-  fcmap2 = ggplot(fc1, aes(x=abs, y=lambda, color=elevation, lty=year)) +geom_line(lwd=1) +theme_bw()+ theme(legend.position = "bottom")+ylim(1,3.25)
+  fcmap2 = ggplot(fc1, aes(x=abs, y=lambda, color=elevation, lty=year)) +geom_line(lwd=1) +theme_bw()+ theme(legend.position = "bottom")+ylim(1,2.4)
   
   #-------------------
   setwd(paste(fdir,"figures\\",sep="") )
@@ -935,16 +936,21 @@ dev.off()
 #average lambdas across time period
 #first generation
 lambda.diff= lambda.mean[,,1,]
+
+#change erroneous values
+lambda.diff[which(lambda.diff< (-60))]=NA
+lambda.diff[which(lambda.diff> 112)]=NA
+
 per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = FALSE, dims = 1)
 per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = FALSE, dims = 1)
 per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims = 1)
 per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
-lper1s= per1 #-per2[,1]
-lper2s= per2 #-per2[,1]
-lper3s= per3 #-per2[,1]
-lper4s= per4 #-per2[,1]
+lper1s= per1 -per1[,1]
+lper2s= per2 -per1[,1]
+lper3s= per3 -per1[,1]
+lper4s= per4 -per1[,1]
 
 #----------
 #second generation
@@ -956,26 +962,30 @@ per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims =
 per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
-lper1s.gen2= per1 #-per2[,1]
-lper2s.gen2= per2 #-per2[,1]
-lper3s.gen2= per3 #-per2[,1]
-lper4s.gen2= per4 #-per2[,1]
+lper1s.gen2= per1 -per1[,1]
+lper2s.gen2= per2 -per1[,1]
+lper3s.gen2= per3 -per1[,1]
+lper4s.gen2= per4 -per1[,1]
 #----------
 
 #ABS
 #average abs across time period
 #first generation
 lambda.diff= abs.mean[,,1,,2]#abs mid
+
+#change erroneous values
+lambda.diff[which(lambda.diff>0.8 | lambda.diff<0.2)]=NA
+
 per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = FALSE, dims = 1)
 per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = FALSE, dims = 1)
 per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims = 1)
 per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
-aper1s= per1 #-per2[,1]
-aper2s= per2 #-per2[,1]
-aper3s= per3 #-per2[,1]
-aper4s= per4 #-per2[,1]
+aper1s= per1 -per2[,1]
+aper2s= per2 -per2[,1]
+aper3s= per3 -per2[,1]
+aper4s= per4 -per2[,1]
 
 #determine breaks
 l.breaks= rbind(lper1s, lper2s, lper3s, lper4s)
@@ -983,7 +993,7 @@ l.breaks=quantile(l.breaks, probs=seq(0,1,0.1), na.rm=TRUE)
 
 a.breaks= rbind(aper1s, aper2s, aper3s, aper4s)
 a.breaks=quantile(a.breaks, probs=seq(0,1,0.1), na.rm=TRUE)
-
+ 
 l.lab= round(l.breaks, digits=2)
 a.lab= round(a.breaks, digits=2)
 
@@ -1003,7 +1013,13 @@ for(scen.k in 1:5){
   names(lper2)[9]="lambda"
   names(lper3)[9]="lambda"
   names(lper4)[9]="lambda"
-                    
+              
+  #omit NAs
+  lper1= lper1[which(!is.na(lper1$lambda)),]
+  lper2= lper2[which(!is.na(lper2$lambda)),]
+  lper3= lper3[which(!is.na(lper3$lambda)),]
+  lper4= lper4[which(!is.na(lper4$lambda)),]
+  
   #set up map
   bbox <- ggmap::make_bbox(lon, lat, lper1, f = 0.1)
   map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
@@ -1014,8 +1030,11 @@ for(scen.k in 1:5){
   lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
   lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
   
+  #library(fields)
+  #quilt.plot(lper2$lon,lper2$lat, lper2$lambda)
   
   #-------------
+  
   #ABS
   #Set up data
   aper1= cbind(pts.sel, aper1s[,scen.k])
@@ -1027,6 +1046,12 @@ for(scen.k in 1:5){
   names(aper2)[9]="abs"
   names(aper3)[9]="abs"
   names(aper4)[9]="abs"
+  
+  #omit NAs
+  aper1= aper1[which(!is.na(aper1$lambda)),]
+  aper2= aper2[which(!is.na(aper2$lambda)),]
+  aper3= aper3[which(!is.na(aper3$lambda)),]
+  aper4= aper4[which(!is.na(aper4$lambda)),]
   
   #set up map
   bbox <- ggmap::make_bbox(lon, lat, aper1, f = 0.1)
@@ -1048,66 +1073,35 @@ for(scen.k in 1:5){
 } #end scen loop
 #----------------------------
 
-grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, position = c("right")) {
-  
-  plots <- list(...)
-  position <- match.arg(position)
-  g <- ggplotGrob(plots[[1]] + theme(legend.position = position))$grobs
-  legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
-  lheight <- sum(legend$height)
-  lwidth <- sum(legend$width)
-  gl <- lapply(plots, function(x) x + theme(legend.position="none"))
-  gl <- c(gl, ncol = ncol, nrow = nrow)
-  
-  combined <- switch(position,
-                     "bottom" = arrangeGrob(do.call(arrangeGrob, gl),
-                                            legend,
-                                            ncol = 1,
-                                            heights = unit.c(unit(1, "npc") - lheight, lheight)),
-                     "right" = arrangeGrob(do.call(arrangeGrob, gl),
-                                           legend,
-                                           ncol = 2,
-                                           widths = unit.c(unit(1, "npc") - lwidth, lwidth)))
-  
-  grid.newpage()
-  grid.draw(combined)
-  
-  # return gtable invisibly
-  invisible(combined)
-  
-}
-
-#-------------------
-
 #FIG. 5: ABS MAP
 setwd(paste(fdir,"figures\\",sep="") )
 pdf("Fig5_Abs_map.pdf", height = 4, width = 8)
 
-#grid_arrange_shared_legend(aper1.3,aper2.3,aper3.3,aper4.3,aper1.4,aper2.4,aper3.4,aper4.4,aper1.5,aper2.5,aper3.5,aper4.5, ncol = 4, nrow = 3)
+grid_arrange_shared_legend(aper1.3,aper2.3,aper3.3,aper4.3,aper1.4,aper2.4,aper3.4,aper4.4,aper1.5,aper2.5,aper3.5,aper4.5, ncol = 4, nrow = 3)
+
+dev.off()
 
 # aper1.1,aper2.1,aper3.1,aper4.1,aper1.2,aper2.2,aper3.2,aper4.2,
 
-grid.newpage()
-pushViewport(viewport(layout=grid.layout(3,4)))
-vplayout<-function(x,y)
-  viewport(layout.pos.row=x,layout.pos.col=y)
+#grid.newpage()
+#pushViewport(viewport(layout=grid.layout(3,4)))
+#vplayout<-function(x,y)
+#  viewport(layout.pos.row=x,layout.pos.col=y)
 
-print(aper1.3,vp=vplayout(1,1))
-print(aper2.3,vp=vplayout(2,1))
-print(aper3.3,vp=vplayout(3,1))
-print(aper4.3,vp=vplayout(4,1))
+#print(aper1.3,vp=vplayout(1,1))
+#print(aper2.3,vp=vplayout(2,1))
+#print(aper3.3,vp=vplayout(3,1))
+#print(aper4.3,vp=vplayout(4,1))
 
-print(aper1.4,vp=vplayout(1,2))
-print(aper2.4,vp=vplayout(2,2))
-print(aper3.4,vp=vplayout(3,2))
-print(aper4.4,vp=vplayout(4,2))
+#print(aper1.4,vp=vplayout(1,2))
+#print(aper2.4,vp=vplayout(2,2))
+#print(aper3.4,vp=vplayout(3,2))
+#print(aper4.4,vp=vplayout(4,2))
 
-print(aper1.5,vp=vplayout(1,3))
-print(aper2.5,vp=vplayout(2,3))
-print(aper3.5,vp=vplayout(3,3))
-print(aper4.5,vp=vplayout(4,3))
-
-dev.off()
+#print(aper1.5,vp=vplayout(1,3))
+#print(aper2.5,vp=vplayout(2,3))
+#print(aper3.5,vp=vplayout(3,3))
+#print(aper4.5,vp=vplayout(4,3))
 
 #-------------
 #FIG. 6: LAMBDA MAP
@@ -1142,4 +1136,35 @@ lamb[,"2015"]
 lamb[,"2023"]
 lamb[,"2024"]
 
+#--------------
+grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, position = c("right")) {
+  
+  plots <- list(...)
+  position <- match.arg(position)
+  g <- ggplotGrob(plots[[1]] + theme(legend.position = position))$grobs
+  legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+  lheight <- sum(legend$height)
+  lwidth <- sum(legend$width)
+  gl <- lapply(plots, function(x) x + theme(legend.position="none"))
+  gl <- c(gl, ncol = ncol, nrow = nrow)
+  
+  combined <- switch(position,
+                     "bottom" = arrangeGrob(do.call(arrangeGrob, gl),
+                                            legend,
+                                            ncol = 1,
+                                            heights = unit.c(unit(1, "npc") - lheight, lheight)),
+                     "right" = arrangeGrob(do.call(arrangeGrob, gl),
+                                           legend,
+                                           ncol = 2,
+                                           widths = unit.c(unit(1, "npc") - lwidth, lwidth)))
+  
+  grid.newpage()
+  grid.draw(combined)
+  
+  # return gtable invisibly
+  invisible(combined)
+  
+}
+
+#-------------------
   
