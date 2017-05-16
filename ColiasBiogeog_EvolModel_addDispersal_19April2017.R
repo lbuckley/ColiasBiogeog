@@ -327,11 +327,11 @@ if(scen.k==5) abs.mean[yr.k,l.no.na,gen.k,scen.k,"Brn"]= BetaRN
 
 setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 
-saveRDS(abs.mean, "absmean.abs")
-saveRDS(lambda.mean, "lambdamean.abs")
+#saveRDS(abs.mean, "absmean.abs")
+#saveRDS(lambda.mean, "lambdamean.abs")
 
-#abs.mean <- readRDS("absmean.abs")
-#lambda.mean <- readRDS("lambdamean.abs")
+abs.mean <- readRDS("absmean.abs")
+lambda.mean <- readRDS("lambdamean.abs")
 
 #=====================================================
 ##  PLOT OUT
@@ -1030,9 +1030,6 @@ for(scen.k in 1:5){
   lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
   lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
   
-  #library(fields)
-  #quilt.plot(lper2$lon,lper2$lat, lper2$lambda)
-  
   #-------------
   
   #ABS
@@ -1048,10 +1045,10 @@ for(scen.k in 1:5){
   names(aper4)[9]="abs"
   
   #omit NAs
-  aper1= aper1[which(!is.na(aper1$lambda)),]
-  aper2= aper2[which(!is.na(aper2$lambda)),]
-  aper3= aper3[which(!is.na(aper3$lambda)),]
-  aper4= aper4[which(!is.na(aper4$lambda)),]
+  aper1= aper1[which(!is.na(aper1$abs)),]
+  aper2= aper2[which(!is.na(aper2$abs)),]
+  aper3= aper3[which(!is.na(aper3$abs)),]
+  aper4= aper4[which(!is.na(aper4$abs)),]
   
   #set up map
   bbox <- ggmap::make_bbox(lon, lat, aper1, f = 0.1)
@@ -1071,6 +1068,18 @@ for(scen.k in 1:5){
   if(scen.k==5) {lper1.5=lper1.map; aper1.5=aper1.map;lper2.5=lper2.map; aper2.5=aper2.map; lper3.5=lper3.map; aper3.5=aper3.map; lper4.5=lper4.map; aper4.5=aper4.map}
   
 } #end scen loop
+
+#-------------
+#CHECK MAP
+
+#library(fields)
+#quilt.plot(aper2$lon,aper2$lat, aper2$abs)
+
+#Try interpolation
+aper2.map<- map1 + geom_raster(data=aper2, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
+
+aper2.map<- map1 + geom_raster(data=aper2, interpolate=TRUE, aes(fill = abs), alpha=0.5)+ coord_cartesian()
+
 #----------------------------
 
 #FIG. 5: ABS MAP
@@ -1167,4 +1176,28 @@ grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, 
 }
 
 #-------------------
+#CHECK NAs in pupal temeprature etc
+
+#Check previous versions
+setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\3gen_rds")
+Lambda1 <- readRDS( paste("lambda1_",projs[proj.k],".rds", sep="") )
+pup.temps1 <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
+lper1= cbind(pts.sel, pup.temps1[9,10,,2])
+
+#Set up data
+lper1= cbind(pts.sel, pup.temps[9,10,,2]) #adult temps
+
+names(lper1)[9]="temp"
+
+#set up map
+bbox <- ggmap::make_bbox(lon, lat, lper1, f = 0.1)
+map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
+map1=ggmap(map_loc, margins=FALSE)
+
+lper1.map<- map1 + geom_raster(data=lper1, aes(fill = temp), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(20))
+#+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
+
+lper1.map
+
+#------------------------
   

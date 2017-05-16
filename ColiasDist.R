@@ -130,7 +130,7 @@ times= paste(time.mat[,2], time.mat[,1], sep="")
 #DEM
 library(raster)
 
-elev= getData('worldclim', var='alt', res=5)
+elev= raster::getData('worldclim', var='alt', res=5)
 #crop
 e <- extent(min(lon)-360, max(lon)-360, min(lat), max(lat))
 co.elev= crop(elev, e)
@@ -143,7 +143,7 @@ pts= cbind(pts, pts.ind)
 names(pts)= c("lon","lat","lon.ind", "lat.ind")
 pts$ind= 1:nrow(pts)
 
-pts$elev= extract(co.elev, pts[,1:2])
+pts$elev= raster::extract(co.elev, pts[,1:2])
 elev.mat= matrix(pts$elev, nrow=length(lat), ncol=length(lon), byrow=TRUE)
 
 filled.contour(lon,lat, t(elev.mat[length(lat):1,]), color= terrain.colors, asp=1)  #[length(lat):1,]
@@ -269,7 +269,7 @@ Tsurf.shade9= read.csv(paste(mpath,"Tsurf_shade_9.csv",sep=""))
 #elevation subset
 grid.sel= which(pts$elev>1200 & pts$elev<3200)
 pts.sel= pts[grid.sel,1:7]
-
+ 
 #Other microclimate 
 #Max and min temp in shade
 Ts_sh_min= rbind(apply(Tsurf.shade3[pts.sel[,"ind"],3:26], 1, min),apply(Tsurf.shade4[pts.sel[,"ind"],3:26], 1, min),apply(Tsurf.shade5[pts.sel[,"ind"],3:26], 1, min),apply(Tsurf.shade6[pts.sel[,"ind"],3:26], 1, min),apply(Tsurf.shade7[pts.sel[,"ind"],3:26], 1, min),apply(Tsurf.shade8[pts.sel[,"ind"],3:26], 1, min),apply(Tsurf.shade9[pts.sel[,"ind"],3:26], 1, min) ) 
@@ -317,7 +317,7 @@ aseq= seq(0.4,0.7,0.05)
 #===================================================================
 #LOOP YEARS
 
-for(yr.k in 20:length(years) ){
+for(yr.k in 1:length(years) ){
 print(yr.k)
   
 inds= which(time.mat[,2]==years[yr.k])
@@ -329,13 +329,18 @@ tmin.yr= tmin[, , inds, proj.k]
 #CALCULATE DEVELOPMENT TIMING AND TEMPS
 
 #Temps at plant height
+lon.inds= pts.sel[, "lon.ind"]
+lat.inds= pts.sel[, "lat.ind"]
+lonlat.inds <- cbind(lon.inds,lat.inds)
 
 Ta_plant_min<- foreach(d=60:273, .combine='cbind')  %do% {
-  T_mat= cbind(tmin.yr[pts.sel[, "lon.ind"], pts.sel[, "lat.ind"],d], Ts_sh_min[mo[d]-2, ])
+  T_mat= tmin.yr[, ,d]
+  T_mat= cbind(T_mat[lonlat.inds], Ts_sh_min[mo[d]-2, ])
   apply(T_mat,MARGIN=1, FUN=air_temp_at_height_z.mat, z_0=z_0_1, z_r=2, z=z_0_1)}
 
 Ta_plant_max<- foreach(d=60:273, .combine='cbind')  %do% {
-  T_mat= cbind(tmax.yr[pts.sel[, "lon.ind"], pts.sel[, "lat.ind"],d], Ts_sh_max[mo[d]-2, ])
+  T_mat= tmax.yr[, ,d]
+  T_mat= cbind(T_mat[lonlat.inds], Ts_sh_max[mo[d]-2, ])
   apply(T_mat,MARGIN=1, FUN=air_temp_at_height_z.mat, z_0=z_0_1, z_r=2, z=z_0_1)}
 
 #transpose
@@ -344,7 +349,7 @@ Ta_plant_max= t(Ta_plant_max)
 
 ##subset post snowment ## ELEVATION REGRESSION ACROSS WESTERN CLIMATE DATA CENTER?
 #dat2= subset(dat2, dat2$Julian>= Jmelt)
-  
+
 #----------------------------
 # ESTIMATE DEVELOPMENTAL TIMING
 
@@ -712,3 +717,18 @@ pup.temps[6, 1:20, , 2]
 
 Lambda_old[1, , 3, 2, 1]
 Lambda[1, , 3, 2, 1]
+
+#--------------------
+#PLOTS
+
+lper1= cbind(pts.sel, Ta_plant_min[1,])
+lper1= cbind(pts.sel, GDDs_l[1,])
+
+lper1= cbind(pts.sel, pup.temps[9,yr.k,,2]) 
+names(lper1)[8]="var"
+quilt.plot(lper1$lon,lper1$lat, lper1$var)
+
+plot(lper1$lon, lper1$var)
+
+
+
