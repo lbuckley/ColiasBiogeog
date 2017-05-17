@@ -60,15 +60,16 @@ setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 #previous version
 #setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\3gen_rds")
 
-#Lambda <- readRDS( paste("lambda1_",projs[proj.k],".rds", sep="") )
-#pup.temps <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
+Lambda <- readRDS( paste("lambda1_",projs[proj.k],".rds", sep="") )
+pup.temps <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
 ##recent versions
-Lambda <- readRDS( paste("lambda1_May12_",projs[proj.k],".rds", sep="") )
-pup.temps <- readRDS( paste("PupTemps_May12_",projs[proj.k],".rds", sep="") )
+#Lambda <- readRDS( paste("lambda1_May12_",projs[proj.k],".rds", sep="") )
+#pup.temps <- readRDS( paste("PupTemps_May12_",projs[proj.k],".rds", sep="") )
 
 #Find years with calculations
 counts= rowSums(is.na(pup.temps[6,,,1]))
 #inds=1:(which.min(counts==0) -1)
+
 inds=1:150
 years= years[inds]
 
@@ -138,7 +139,7 @@ abs.init<- abs.init2
 
 #----------------------------
 #Plot number generations by elevation
-
+#gen.k=3
 Lambda.yr.gen= Lambda[yr.k, , , gen.k, ] #150 841   7   3   4
 # colSums(!is.na(Lambda[, , 1, 3, 1])) #CHECK NA counts
 
@@ -394,8 +395,8 @@ for(gen in 1:3){
   #------------------
   
   #sample sites to faciliate visualization
-  s.inds=sort(base::sample(1:nrow(phen),50000))  
-  phen1= phen[s.inds,]
+  #s.inds=sort(base::sample(1:nrow(phen),50000))  
+  phen1= phen #[s.inds,]
   
   #Interpolate
   s=interp(phen1$year,phen1$elev,phen1$Jadult, duplicate="strip")
@@ -428,8 +429,9 @@ for(gen in 1:3){
   #------------------
   
   #sample sites to faciliate visualization
-  s.inds=sort(base::sample(1:nrow(phen),10000))  
-  phen1= phen[s.inds,]
+  #s.inds=sort(base::sample(1:nrow(phen),10000))  
+  #phen1= phen[s.inds,]
+  phen1= na.omit(phen)
   
   #Interpolate
   s=interp(phen1$year,phen1$elev,phen1$Tpup, duplicate="strip")
@@ -462,8 +464,10 @@ for(gen in 1:3){
   #------------------
   
   #sample sites to faciliate visualization
-  s.inds=sort(base::sample(1:nrow(phen),50000))  
-  phen1= phen[s.inds,]
+  #s.inds=sort(base::sample(1:nrow(phen),50000))  
+  #phen1= phen[s.inds,]
+  
+  phen1= na.omit(phen)
   #cut coldest temp to facilitate color scale
   phen1= phen1[which(phen1$Tad>7),]
   
@@ -932,6 +936,8 @@ dev.off()
 #===============================================
 #MAPS LAMBDA AND ABS RELATIVE TO BASELINE (2010?)
 
+#CURRENTLY na.rm=TRUE, change?
+
 #LAMBDA
 #average lambdas across time period
 #first generation
@@ -941,10 +947,10 @@ lambda.diff= lambda.mean[,,1,]
 lambda.diff[which(lambda.diff< (-60))]=NA
 lambda.diff[which(lambda.diff> 112)]=NA
 
-per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = FALSE, dims = 1)
-per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = FALSE, dims = 1)
-per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims = 1)
-per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
+per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = TRUE, dims = 1)
+per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = TRUE, dims = 1)
+per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = TRUE, dims = 1)
+per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = TRUE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
 lper1s= per1 -per1[,1]
@@ -956,13 +962,13 @@ lper4s= per4 -per1[,1]
 #second generation
 
 lambda.diff= lambda.mean[,,2,]
-per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = FALSE, dims = 1)
-per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = FALSE, dims = 1)
-per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims = 1)
-per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
+per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = TRUE, dims = 1)
+per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = TRUE, dims = 1)
+per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = TRUE, dims = 1)
+per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = TRUE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
-lper1s.gen2= per1 -per1[,1]
+lper1s.gen2= per1 #-per1[,1]
 lper2s.gen2= per2 -per1[,1]
 lper3s.gen2= per3 -per1[,1]
 lper4s.gen2= per4 -per1[,1]
@@ -976,13 +982,13 @@ lambda.diff= abs.mean[,,1,,2]#abs mid
 #change erroneous values
 lambda.diff[which(lambda.diff>0.8 | lambda.diff<0.2)]=NA
 
-per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = FALSE, dims = 1)
-per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = FALSE, dims = 1)
-per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = FALSE, dims = 1)
-per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = FALSE, dims = 1)
+per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = TRUE, dims = 1)
+per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = TRUE, dims = 1)
+per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = TRUE, dims = 1)
+per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = TRUE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
-aper1s= per1 -per2[,1]
+aper1s= per1 #-per2[,1]
 aper2s= per2 -per2[,1]
 aper3s= per3 -per2[,1]
 aper4s= per4 -per2[,1]
@@ -1073,7 +1079,7 @@ for(scen.k in 1:5){
 #CHECK MAP
 
 #library(fields)
-#quilt.plot(aper2$lon,aper2$lat, aper2$abs)
+#quilt.plot(lper1$lon,lper1$lat, lper1$lambda)
 
 #Try interpolation
 aper2.map<- map1 + geom_raster(data=aper2, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
@@ -1178,26 +1184,27 @@ grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, 
 #-------------------
 #CHECK NAs in pupal temeprature etc
 
-#Check previous versions
-setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\3gen_rds")
-Lambda1 <- readRDS( paste("lambda1_",projs[proj.k],".rds", sep="") )
-pup.temps1 <- readRDS( paste("PupTemps_",projs[proj.k],".rds", sep="") )
-lper1= cbind(pts.sel, pup.temps1[9,10,,2])
-
 #Set up data
 lper1= cbind(pts.sel, pup.temps[9,10,,2]) #adult temps
+lper1= cbind(pts.sel, lambda.mean[10,,1,1])
+lper1= cbind(pts.sel, abs.mean[10,,1,3,2])
 
-names(lper1)[9]="temp"
+names(lper1)[9]="var"
 
 #set up map
 bbox <- ggmap::make_bbox(lon, lat, lper1, f = 0.1)
 map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
 map1=ggmap(map_loc, margins=FALSE)
 
-lper1.map<- map1 + geom_raster(data=lper1, aes(fill = temp), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(20))
+lper1.map<- map1 + geom_raster(data=lper1, aes(fill = var), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(20))
 #+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
 
 lper1.map
 
 #------------------------
-  
+
+lambda.diff= lambda.mean[,,1,]
+
+#change erroneous values
+lambda.diff[which(lambda.diff< (-60))]=NA
+lambda.diff[which(lambda.diff> 112)]=NA
