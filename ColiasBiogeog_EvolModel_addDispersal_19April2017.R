@@ -16,6 +16,7 @@ library(grid)
 library(arrayhelpers)
 library(gridExtra)
 library(akima) #for interpolation
+library(scales)
 #-----------------------------
     
 fdir= "C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\"
@@ -944,19 +945,20 @@ dev.off()
 lambda.diff= lambda.mean[,,1,]
 
 #change erroneous values
-lambda.diff[which(lambda.diff< (-60))]=NA
-lambda.diff[which(lambda.diff> 112)]=NA
+lambda.diff[which(lambda.diff< (-10))]=NA
+lambda.diff[which(lambda.diff> 10)]=NA
 
 per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = TRUE, dims = 1)
 per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = TRUE, dims = 1)
 per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = TRUE, dims = 1)
 per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = TRUE, dims = 1)
 
-#translate to difference from 1981-2010 for no plasticity or evolution
+#translate to difference from no plasticity or evolution
 lper1s= per1 -per1[,1]
-lper2s= per2 -per1[,1]
-lper3s= per3 -per1[,1]
-lper4s= per4 -per1[,1]
+lper2s= per2 -per2[,1]
+lper3s= per3 -per3[,1]
+lper4s= per4 -per4[,1]
+
 
 #----------
 #second generation
@@ -968,10 +970,15 @@ per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = TRUE, dims = 
 per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = TRUE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
-lper1s.gen2= per1 #-per1[,1]
-lper2s.gen2= per2 -per1[,1]
-lper3s.gen2= per3 -per1[,1]
-lper4s.gen2= per4 -per1[,1]
+lper1s.gen2= per1 -per1[,1]
+lper2s.gen2= per2 -per2[,1]
+lper3s.gen2= per3 -per3[,1]
+lper4s.gen2= per4 -per4[,1]
+#correct NaNs
+lper1s[is.nan(lper1s)] <- NA
+lper2s[is.nan(lper2s)] <- NA
+lper3s[is.nan(lper3s)] <- NA
+lper4s[is.nan(lper4s)] <- NA
 #----------
 
 #ABS
@@ -988,17 +995,22 @@ per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = TRUE, dims = 
 per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = TRUE, dims = 1)
 
 #translate to difference from 1981-2010 for no plasticity or evolution
-aper1s= per1 #-per2[,1]
+aper1s= per1 -per1[,1]
 aper2s= per2 -per2[,1]
-aper3s= per3 -per2[,1]
-aper4s= per4 -per2[,1]
+aper3s= per3 -per3[,1]
+aper4s= per4 -per4[,1]
+#correct NaNs
+aper1s[is.nan(aper1s)] <- NA
+aper2s[is.nan(aper2s)] <- NA
+aper3s[is.nan(aper3s)] <- NA
+aper4s[is.nan(aper4s)] <- NA
 
 #determine breaks
-l.breaks= rbind(lper1s, lper2s, lper3s, lper4s)
-l.breaks=quantile(l.breaks, probs=seq(0,1,0.1), na.rm=TRUE)
+l.break= rbind(lper1s, lper2s, lper3s, lper4s)
+l.breaks=quantile(l.break, probs=seq(0,1,0.1), na.rm=TRUE)
 
-a.breaks= rbind(aper1s, aper2s, aper3s, aper4s)
-a.breaks=quantile(a.breaks, probs=seq(0,1,0.1), na.rm=TRUE)
+a.break= rbind(aper1s, aper2s, aper3s, aper4s)
+a.breaks=quantile(a.break, probs=seq(0,1,0.1), na.rm=TRUE)
  
 l.lab= round(l.breaks, digits=2)
 a.lab= round(a.breaks, digits=2)
@@ -1035,6 +1047,20 @@ for(scen.k in 1:5){
   lper2.map<- map1 + geom_raster(data=lper2, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
   lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
   lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
+  
+  #****
+  require(gtools) # needed for quantcut()
+  
+  lambda.cut= quantcut(l.break, q=10)
+  
+  fill_factor <- quantcut(fill_continuous, q=seq(0,1,by=0.25))
+  ggplot(mydata) + 
+    aes(long,lat,group=group,fill=fill_factor) +
+    geom_polygon() +
+    scale_fill_brewer(name="mybins", palette="PuOr")
+  
+  
+  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda.cut), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="mybins", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
   
   #-------------
   
