@@ -777,26 +777,29 @@ scen.k=5
   for(scen.k in 3:5){
     gen.k=1
     abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Babsmid"]) ) 
-    abs.dat= gather(abs.all, "year", "Babs",9:145)
+    abs.dat= gather(abs.all, "year", "Babs",9:158)
     abs.dat$year= years[as.numeric(abs.dat$year)]
     abs.dat$ecut= cut(abs.dat$elev, breaks=3)
-    abs.agg1= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+    abs.agg1= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean, na.rm=TRUE)
+    names(abs.agg1)[2]="ecut"
     abs.dat1= abs.dat
     
     gen.k=2
     abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Babsmid"]) ) 
-    abs.dat= gather(abs.all, "year", "Babs",9:145)
+    abs.dat= gather(abs.all, "year", "Babs",9:158)
     abs.dat$year= years[as.numeric(abs.dat$year)]
     abs.dat$ecut= cut(abs.dat$elev, breaks=3)
-    abs.agg2= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+    abs.agg2= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean, na.rm=TRUE)
+    names(abs.agg1)[2]="ecut"
     abs.dat2= abs.dat
     
     gen.k=3
     abs.all= cbind(pts.sel, t(abs.mean[inds,,gen.k,scen.k,"Babsmid"]) ) 
-    abs.dat= gather(abs.all, "year", "Babs",9:145)
+    abs.dat= gather(abs.all, "year", "Babs",9:158)
     abs.dat$year= years[as.numeric(abs.dat$year)]
     abs.dat$ecut= cut(abs.dat$elev, breaks=3)
-    abs.agg3= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean)
+    abs.agg3= aggregate(abs.dat, list(abs.dat$year,abs.dat$ecut), FUN=mean, na.rm=TRUE)
+    names(abs.agg1)[2]="ecut"
     abs.dat3= abs.dat
     
     # p.abs1 = ggplot(abs.dat1, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10)) #+facet_wrap(~ecut)
@@ -804,9 +807,9 @@ scen.k=5
     # p.abs3 = ggplot(abs.dat3, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
   
     #ave by elevation   
-    p.abs1 = ggplot(abs.agg1, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
-    p.abs2 = ggplot(abs.agg2, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
-    p.abs3 = ggplot(abs.agg3, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+    p.abs1 = ggplot(abs.agg1, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(-1,2)
+    p.abs2 = ggplot(abs.agg2, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(-1,2)
+    p.abs3 = ggplot(abs.agg3, aes(x=year, y=Babs, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(-1,2)
     
     if(scen.k==5){
       gen.k=1
@@ -838,9 +841,9 @@ scen.k=5
       # p.rn3 = ggplot(abs.dat3, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
     
       #ave by elev
-      p.rn1 = ggplot(abs.agg1, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
-      p.rn2 = ggplot(abs.agg2, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
-      p.rn3 = ggplot(abs.agg3, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))
+      p.rn1 = ggplot(abs.agg1, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(-1,2)
+      p.rn2 = ggplot(abs.agg2, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(-1,2)
+      p.rn3 = ggplot(abs.agg3, aes(x=year, y=Brn, group=X, color=elev )) +geom_line() +theme_bw()+scale_color_gradientn(colours=matlab.like(10))+ylim(-1,2)
       }
     
     if(scen.k==3) {p.a31=p.abs1; p.a32=p.abs2; p.a33=p.abs3}

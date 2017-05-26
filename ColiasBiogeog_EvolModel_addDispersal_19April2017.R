@@ -959,6 +959,11 @@ lper2s= per2 -per2[,1]
 lper3s= per3 -per3[,1]
 lper4s= per4 -per4[,1]
 
+##fixed tiem period
+#lper1s= per1 -per1[,1]
+#lper2s= per2 -per1[,1]
+#lper3s= per3 -per1[,1]
+#lper4s= per4 -per1[,1]
 
 #----------
 #second generation
@@ -969,11 +974,18 @@ per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = TRUE, dims = 
 per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = TRUE, dims = 1)
 per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = TRUE, dims = 1)
 
-#translate to difference from 1981-2010 for no plasticity or evolution
+#translate to difference from no plasticity or evolution
 lper1s.gen2= per1 -per1[,1]
 lper2s.gen2= per2 -per2[,1]
 lper3s.gen2= per3 -per3[,1]
 lper4s.gen2= per4 -per4[,1]
+
+##fixed time period
+#lper1s.gen2= per1 -per1[,1]
+#lper2s.gen2= per2 -per1[,1]
+#lper3s.gen2= per3 -per1[,1]
+#lper4s.gen2= per4 -per1[,1]
+
 #correct NaNs
 lper1s[is.nan(lper1s)] <- NA
 lper2s[is.nan(lper2s)] <- NA
@@ -1011,7 +1023,10 @@ l.breaks=quantile(l.break, probs=seq(0,1,0.1), na.rm=TRUE)
 
 a.break= rbind(aper1s, aper2s, aper3s, aper4s)
 a.breaks=quantile(a.break, probs=seq(0,1,0.1), na.rm=TRUE)
- 
+
+l.breaks= unique(l.breaks)
+a.breaks= unique(a.breaks)
+
 l.lab= round(l.breaks, digits=2)
 a.lab= round(a.breaks, digits=2)
 
@@ -1038,29 +1053,27 @@ for(scen.k in 1:5){
   lper3= lper3[which(!is.na(lper3$lambda)),]
   lper4= lper4[which(!is.na(lper4$lambda)),]
   
+  #bin
+  lper1$lambda.bins= cut(lper1$lambda, breaks=l.breaks)
+  lper2$lambda.bins= cut(lper2$lambda, breaks=l.breaks)
+  lper3$lambda.bins= cut(lper3$lambda, breaks=l.breaks)
+  lper4$lambda.bins= cut(lper4$lambda, breaks=l.breaks)
+  
   #set up map
   bbox <- ggmap::make_bbox(lon, lat, lper1, f = 0.1)
   map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
   map1=ggmap(map_loc, margins=FALSE)
   
-  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
-  lper2.map<- map1 + geom_raster(data=lper2, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
-  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
-  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab)+ coord_fixed() + theme(legend.position="right")
+  #OLD VERSION
+  #lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
+
+  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+
+  lper2.map<- map1 + geom_raster(data=lper2, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
   
-  #****
-  require(gtools) # needed for quantcut()
+  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
   
-  lambda.cut= quantcut(l.break, q=10)
-  
-  fill_factor <- quantcut(fill_continuous, q=seq(0,1,by=0.25))
-  ggplot(mydata) + 
-    aes(long,lat,group=group,fill=fill_factor) +
-    geom_polygon() +
-    scale_fill_brewer(name="mybins", palette="PuOr")
-  
-  
-  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda.cut), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="mybins", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
   
   #-------------
   
@@ -1082,15 +1095,27 @@ for(scen.k in 1:5){
   aper3= aper3[which(!is.na(aper3$abs)),]
   aper4= aper4[which(!is.na(aper4$abs)),]
   
+  #bin
+  aper1$abs.bins= cut(aper1$abs, breaks=a.breaks)
+  aper2$abs.bins= cut(aper2$abs, breaks=a.breaks)
+  aper3$abs.bins= cut(aper3$abs, breaks=a.breaks)
+  aper4$abs.bins= cut(aper4$abs, breaks=a.breaks)
+  
   #set up map
   bbox <- ggmap::make_bbox(lon, lat, aper1, f = 0.1)
   map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
   map1=ggmap(map_loc, margins=FALSE)
+
+#OLD VERSION  
+#  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
   
-  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
-  aper2.map<- map1 + geom_raster(data=aper2, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
-  aper3.map<- map1 + geom_raster(data=aper3, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
-  aper4.map<- map1 + geom_raster(data=aper4, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
+  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+  
+  aper2.map<- map1 + geom_raster(data=aper2, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+  
+  aper3.map<- map1 + geom_raster(data=aper3, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+  
+  aper4.map<- map1 + geom_raster(data=aper4, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
   
   #----------
   if(scen.k==1) {lper1.1=lper1.map; aper1.1=aper1.map;lper2.1=lper2.map; aper2.1=aper2.map; lper3.1=lper3.map; aper3.1=aper3.map; lper4.1=lper4.map; aper4.1=aper4.map}
@@ -1208,29 +1233,3 @@ grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, 
 }
 
 #-------------------
-#CHECK NAs in pupal temeprature etc
-
-#Set up data
-lper1= cbind(pts.sel, pup.temps[9,10,,2]) #adult temps
-lper1= cbind(pts.sel, lambda.mean[10,,1,1])
-lper1= cbind(pts.sel, abs.mean[10,,1,3,2])
-
-names(lper1)[9]="var"
-
-#set up map
-bbox <- ggmap::make_bbox(lon, lat, lper1, f = 0.1)
-map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
-map1=ggmap(map_loc, margins=FALSE)
-
-lper1.map<- map1 + geom_raster(data=lper1, aes(fill = var), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(20))
-#+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
-
-lper1.map
-
-#------------------------
-
-lambda.diff= lambda.mean[,,1,]
-
-#change erroneous values
-lambda.diff[which(lambda.diff< (-60))]=NA
-lambda.diff[which(lambda.diff> 112)]=NA
