@@ -44,6 +44,14 @@ abs.mean=0.55; #UPDATE
 abs.sd= 0.062
 rn.sd= 0.0083
 
+#RESOURCES FOR ADDING DISPERSAL KERNAL
+#USE:
+#***  https://rdrr.io/rforge/ecomodtools/man/LatticeTransitionProbs.html
+
+# https://www.r-bloggers.com/continuous-dispersal-on-a-discrete-lattice/
+# http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2011.00117.x/full
+#useful? https://github.com/pedroj/dispkernels
+
 #-------------------------------
 #EVO MODEL
 N.ind=1000
@@ -338,11 +346,6 @@ lambda.mean <- readRDS("lambdamean.abs")
 #=====================================================
 ##  PLOT OUT
 
-#sample sites to faciliate visualization
-site.ind=sort(base::sample(1:nrow(pts.sel),200))
-
-#=====================================================
-
 #Fig 1. elev vs year for Jadult, Tpup, Tad    
   
   #dim(pup.temps)= 12 150 841 3
@@ -495,7 +498,7 @@ for(gen in 1:3){
   setwd(paste(fdir,"figures\\", sep=""))
   
   pdf("Fig1_FigJadTpupTad.pdf", height=7, width=10)
-  grid.arrange(plot.Jad1, plot.Tpup1, plot.Tad1,plot.Jad2, plot.Tpup2, plot.Tad2, ncol = 3, nrow=2)
+  grid_arrange_shared_legend(plot.Jad1, plot.Tpup1, plot.Tad1,plot.Jad2, plot.Tpup2, plot.Tad2, ncol = 3, nrow=2)
   dev.off()
 # plot.Jad3, plot.Tpup3, plot.Tad3,
   
@@ -506,8 +509,10 @@ for(gen in 1:3){
   
   abs= seq(0.4,0.7,0.05)
   
+  for(gen.k in 1:2){
+  
 #group by elevation
-  dat= Lambda[,,,2,1]
+  dat= Lambda[,,,gen.k,1]
   
   dat1= cbind(pts.sel, t(dat[,,1]) )
   dat2= cbind(pts.sel, t(dat[,,2]) )
@@ -533,25 +538,75 @@ for(gen in 1:3){
   fc7$abs=7
   
   fc=rbind(fc1,fc2,fc3,fc4,fc5,fc6,fc7)
-  fc$elevation= cut(fc$elev, breaks=3)
-  
-  #restrict years
-  fc= fc[which(fc$year %in% c(1980,2010,2040,2070) ),]
-  fc$abs= abs[as.numeric(fc$abs)]  
-  
-  fc1= ddply(fc, .(elevation,year,abs), summarize, lambda=mean(lambda,na.rm=TRUE))
-  fc1$year= as.factor(fc1$year)
+  # fc$elevation= cut(fc$elev, breaks=3)
+  # 
+  # #restrict years
+  # fc= fc[which(fc$year %in% c(1980,2010,2040,2070) ),]
+  # fc$abs= abs[as.numeric(fc$abs)]  
+  # 
+  # fc1= ddply(fc, .(elevation,year,abs), summarize, lambda=mean(lambda,na.rm=TRUE))
+  # fc1$year= as.factor(fc1$year)
+  # 
+  # fcmap2 = ggplot(fc1, aes(x=abs, y=lambda, color=elevation, lty=year)) +geom_line(lwd=1) +theme_bw()+ theme(legend.position = "bottom")+ylim(1,2.4)
+  # 
+  # #PLOT
+  # print(fcmap2)
 
-  fcmap2 = ggplot(fc1, aes(x=abs, y=lambda, color=elevation, lty=year)) +geom_line(lwd=1) +theme_bw()+ theme(legend.position = "bottom")+ylim(1,2.4)
+  #-------------------
+  #surface version of figure
+  
+  #drop NA lambdas
+  fc= fc[which(!is.na(fc$lambda)),]
+  
+  fc$abs= abs[as.numeric(fc$abs)]  
+  fc$year= as.numeric(fc$year)
+  
+  fc$yr.cut= cut(fc$elev, breaks=c(1950,1980,2010,2040,2070,2100),labels=c("1950_1980","2010","2040","2070","2100") )
+  
+  #pick time period
+  #mean across years
+  fc1= ddply(fc, .(ind,elev,yr.cut,abs), summarize, lambda=mean(lambda,na.rm=TRUE))
+  fc2= fc1[which(fc1$yr.cut=="2010"),]
+  
+  #yrs= c(1950,1980,2010,2040,2070,2100)
+  yrs= c(1980,2010,2040,2070)
+  
+  for(yr.k in 1:length(yrs)){
+    
+    #pick year
+    fc2= fc[which(fc$year==yrs[yr.k] ),]
+    
+    #Interpolate
+    s=interp(fc2$elev,fc2$abs,fc2$lambda, duplicate="mean")
+    gdat <- interp2xyz(s, data.frame=TRUE)
+    
+    plot.lambda= ggplot(gdat) + 
+      aes(x = x, y = y, z = z, fill = z) + 
+      geom_tile() + 
+      scale_fill_distiller(palette="Spectral", na.value="white", name="lambda") +
+      theme_bw(base_size=16)+xlab("elevation (m)")+ylab("absorptivity")+theme(legend.position="bottom") +annotate("text", x=2000,y=0.68, label= paste(yrs[yr.k],"gen",gen.k,sep=" "), size=5)
+    
+    if(yr.k==1 & gen.k==1)plot.lambda1980.g1= plot.lambda
+    if(yr.k==2 & gen.k==1)plot.lambda2010.g1= plot.lambda
+    if(yr.k==3 & gen.k==1)plot.lambda2040.g1= plot.lambda
+    if(yr.k==4 & gen.k==1)plot.lambda2070.g1= plot.lambda
+    
+    if(yr.k==1 & gen.k==2)plot.lambda1980.g2= plot.lambda
+    if(yr.k==2 & gen.k==2)plot.lambda2010.g2= plot.lambda
+    if(yr.k==3 & gen.k==2)plot.lambda2040.g2= plot.lambda
+    if(yr.k==4 & gen.k==2)plot.lambda2070.g2= plot.lambda
+    
+  } #end loop years
+  } #end loop generation
   
   #-------------------
   setwd(paste(fdir,"figures\\",sep="") )
-  pdf("Fig2_FitnessCurves_elevs.pdf", height = 8, width = 8)
+  pdf("Fig2_FitnessCurves_elevs.pdf", height = 8, width = 12)
   
-  print(fcmap2)
+  grid_arrange_shared_legend(plot.lambda1980.g1,plot.lambda2010.g1,plot.lambda2040.g1,plot.lambda2070.g1,plot.lambda1980.g2,plot.lambda2010.g2,plot.lambda2040.g2,plot.lambda2070.g2, ncol = 4, nrow = 2)
   
   dev.off()  
-
+  
   #=======================================
   
   #Fig 3. OPTIMAL ABSORPTIVITY
@@ -1224,7 +1279,7 @@ grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, 
                                            ncol = 2,
                                            widths = unit.c(unit(1, "npc") - lwidth, lwidth)))
   
-  grid.newpage()
+ # grid.newpage()
   grid.draw(combined)
   
   # return gtable invisibly
@@ -1232,4 +1287,203 @@ grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, 
   
 }
 
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+## PLOTS
+
+#Fig 4. Fitness change by scenario
+
+#  abs.mean #dims: yr.k, cell.k, gen.k, scen.k:no plast, plast, only plast, metrics: abssample, absmid, rn, Babsmid, Brn)
+#  lambda.mean= array(NA, dim=c(length(years),nrow(pts.sel), 3, 5)) #dims: yr.k, cell.k, gen.k, scen.k
+# scen.k: plast0evol0, plast1evol0, plast0evol1, plast1evol1, plast1evol1rnevol1
+
+#calculate fitness differences by scenario  
+lambda.diff= lambda.mean
+lambda.diff[,,,2]= lambda.diff[,,,2]-lambda.diff[,,,1] 
+lambda.diff[,,,3]= lambda.diff[,,,3]-lambda.diff[,,,1] 
+lambda.diff[,,,4]= lambda.diff[,,,4]-lambda.diff[,,,1] 
+lambda.diff[,,,5]= lambda.diff[,,,5]-lambda.diff[,,,1] 
+
+#separate generations
+lgen1= lambda.diff[,,1,]
+lgen2= lambda.diff[,,2,]
+lgen3= lambda.diff[,,3,]
+
+#drop 1st scenario
+lgen1= lgen1[,,2:5]
+lgen2= lgen2[,,2:5]
+lgen3= lgen3[,,2:5]
+
+#--------------
+#flatten array
+l1= array2df(lgen1)
+colnames(l1)=c("lambda","year","site","scen")
+l2= array2df(lgen2)
+colnames(l2)=c("lambda","year","site","scen")
+l3= array2df(lgen3)
+colnames(l3)=c("lambda","year","site","scen")
+
+#add elevation
+l1$elev= pts.sel$elev[l1$site]
+l2$elev= pts.sel$elev[l2$site]
+l3$elev= pts.sel$elev[l3$site]
+
+#add year
+l1$year= years[l1$year]
+l2$year= years[l2$year]
+l3$year= years[l3$year]
+
+#add scenario
+scens= c("plast0evol0", "plast1evol0", "plast0evol1", "plast1evol1", "plast1evol1rnevol1")
+l1$scen.name= scens[l1$scen+1]
+l2$scen.name= scens[l2$scen+1]
+l3$scen.name= scens[l3$scen+1]
+
 #-------------------
+#surface version of figure
+
+#LAMBDA
+for(gen.k in 1:2){
+  
+  if(gen.k==1) fcl=l1
+  if(gen.k==2) fcl=l2
+  
+  for(scen.k in 1:length(scens)){
+    
+    #pick scenarios
+    fc= fcl[which(fcl$scen==scen.k),]
+    
+    #drop outliers
+    fc= fc[which(fc$lambda> (-1) & fc$lambda< 1),]
+    
+    #drop NA lambdas
+    fc= fc[which(!is.na(fc$lambda)),]
+    
+    #sample
+   if(nrow(fc)>5000 ) inds= base::sample(1:nrow(fc),50000, replace=FALSE)
+    fc=fc[inds,]
+    
+    #Interpolate
+    s=interp(fc$year,fc$elev,fc$lambda, duplicate="mean")
+    gdat <- interp2xyz(s, data.frame=TRUE)
+    
+    plot.lambda= ggplot(gdat) + 
+      aes(x = x, y = y, z = z, fill = z) + 
+      geom_tile() + 
+      scale_fill_distiller(palette="Spectral", na.value="white", name="lambda") +
+      theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") +annotate("text", x=2000,y=1500, label= "test", size=5)
+    
+    if(scen.k==1 & gen.k==1)plot.lambda.scen1.g1= plot.lambda
+    if(scen.k==2 & gen.k==1)plot.lambda.scen2.g1= plot.lambda
+    if(scen.k==3 & gen.k==1)plot.lambda.scen3.g1= plot.lambda
+    if(scen.k==4 & gen.k==1)plot.lambda.scen4.g1= plot.lambda
+    
+    if(scen.k==1 & gen.k==2)plot.lambda.scen1.g2= plot.lambda
+    if(scen.k==2 & gen.k==2)plot.lambda.scen2.g2= plot.lambda
+    if(scen.k==3 & gen.k==2)plot.lambda.scen3.g2= plot.lambda
+    if(scen.k==4 & gen.k==2)plot.lambda.scen4.g2= plot.lambda
+    
+  } #end loop scenario
+  
+} #end loop generation
+
+#-------------------
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Fig4_FitnessSurf_scen.pdf", height = 8, width = 12)
+
+grid_arrange_shared_legend(plot.lambda.scen1.g1,plot.lambda.scen2.g1,plot.lambda.scen3.g1,plot.lambda.scen4.g1,plot.lambda.scen1.g2,plot.lambda.scen2.g2,plot.lambda.scen3.g2,plot.lambda.scen4.g2, ncol = 4, nrow = 2)
+
+dev.off()  
+
+#====================================
+#Compare absorptivities
+
+#calculate absorptivity differences by scenario  
+lambda.diff= abs.mean[,,,,2] #use absmid
+lambda.diff[,,,2]= lambda.diff[,,,2]-lambda.diff[,,,1] 
+lambda.diff[,,,3]= lambda.diff[,,,3]-lambda.diff[,,,1] 
+lambda.diff[,,,4]= lambda.diff[,,,4]-lambda.diff[,,,1] 
+lambda.diff[,,,5]= lambda.diff[,,,5]-lambda.diff[,,,1] 
+
+#separate generations
+lgen1= lambda.diff[,,1,]
+lgen2= lambda.diff[,,2,]
+lgen3= lambda.diff[,,3,]
+
+#drop 1st scenario
+lgen1= lgen1[,,2:5]
+lgen2= lgen2[,,2:5]
+lgen3= lgen3[,,2:5]
+
+#--------------
+#flatten array
+l1= array2df(lgen1)
+colnames(l1)=c("abs","year","site","scen")
+l2= array2df(lgen2)
+colnames(l2)=c("abs","year","site","scen")
+l3= array2df(lgen3)
+colnames(l3)=c("abs","year","site","scen")
+
+#add elevation
+l1$elev= pts.sel$elev[l1$site]
+l2$elev= pts.sel$elev[l2$site]
+l3$elev= pts.sel$elev[l3$site]
+
+#add year
+l1$year= years[l1$year]
+l2$year= years[l2$year]
+l3$year= years[l3$year]
+
+#add scenario
+scens= c("plast0evol0", "plast1evol0", "plast0evol1", "plast1evol1", "plast1evol1rnevol1")
+l1$scen.name= scens[l1$scen+1]
+l2$scen.name= scens[l2$scen+1]
+l3$scen.name= scens[l3$scen+1]
+
+#-------------------
+#surface version of figure
+
+#LAMBDA
+for(gen.k in 1:2){
+  
+  if(gen.k==1) fcl=l1
+  if(gen.k==2) fcl=l2
+  
+  for(scen.k in 1:length(scens)){
+    
+    #pick scenarios
+    fc= fcl[which(fcl$scen==scen.k),]
+    
+    #drop outliers
+    fc= fc[which(fc$abs> (-0.2) & fc$abs< 0.2),]
+    
+    #drop NA lambdas
+    fc= fc[which(!is.na(fc$abs)),]
+    
+    #sample
+    if(nrow(fc)>5000 ) inds= base::sample(1:nrow(fc),50000, replace=FALSE)
+    fc=fc[inds,]
+    
+    #Interpolate
+    s=interp(fc$year,fc$elev,fc$abs, duplicate="mean")
+    gdat <- interp2xyz(s, data.frame=TRUE)
+    
+    plot.abs= ggplot(gdat) + 
+      aes(x = x, y = y, z = z, fill = z) + 
+      geom_tile() + 
+      scale_fill_distiller(palette="Spectral", na.value="white", name="lambda") +
+      theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") +annotate("text", x=2000,y=1500, label= "test", size=5)
+    
+    if(scen.k==1 & gen.k==1)plot.abs.scen1.g1= plot.abs
+    if(scen.k==2 & gen.k==1)plot.abs.scen2.g1= plot.abs
+    if(scen.k==3 & gen.k==1)plot.abs.scen3.g1= plot.abs
+    if(scen.k==4 & gen.k==1)plot.abs.scen4.g1= plot.abs
+    
+    if(scen.k==1 & gen.k==2)plot.abs.scen1.g2= plot.abs
+    if(scen.k==2 & gen.k==2)plot.abs.scen2.g2= plot.abs
+    if(scen.k==3 & gen.k==2)plot.abs.scen3.g2= plot.abs
+    if(scen.k==4 & gen.k==2)plot.abs.scen4.g2= plot.abs
+    
+  } #end loop scenario
+  
+} #end loop generation
+
