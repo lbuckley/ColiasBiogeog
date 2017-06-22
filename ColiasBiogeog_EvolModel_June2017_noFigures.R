@@ -352,16 +352,93 @@ lambda.mean <- readRDS("lambdamean.abs")
 
 #Dispersal kernals across lattices: http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2011.00117.x/full
 #https://www.r-bloggers.com/continuous-dispersal-on-a-discrete-lattice/
-#https://rdrr.io/rforge/ecomodtools/man/LatticeTransitionProbs.html
 
-#Analyze number generations
+#RESOURCES FOR ADDING DISPERSAL KERNAL
+#USE:
+#***  https://rdrr.io/rforge/ecomodtools/man/LatticeTransitionProbs.html
 
-#pts.sel # 841   8
-#Lambda[yr.k, , , gen.k, ] #150 841   7   3   4
-#pup.temps[yr.k, , , gen.k, ] # 12 150 841   3
+#------------------------------------
+install.packages("ecomodtools", repos="http://R-Forge.R-project.org")
+library(ecomodtools)
 
-lamb= cbind(pts.sel,t(Lambda[, , 1, 1, 1]) )
 
-lamb[,"2015"]
-lamb[,"2023"]
-lamb[,"2024"]
+LatticeTransitionProbs(x1, x2, y1, y2, func, approx.method = "AA", boundary = "absorbing", max.prob = .Machine$double.eps^0.25, initial.step = 10000, step.size = 10000, max.rel.var = .Machine$double.eps^0.25, max.runs = 1000000, params = NULL, ...)
+
+# 2D Gaussian dispersal function defined according to Clark et al. (1999)
+# Used in the Monte Carlo integration
+genexp.disp <- function(from, to, params)
+{
+  r.sq <- (from[1] - to[1])^2 + (from[2] - to[2])^2
+  (1.0 / (pi * params[1]^2)) * exp(-(r.sq / params[1]^2))
+}
+
+# Monte Carlo integration settings
+max.prob <- .Machine$double.eps^0.25
+initial.step <- 10000
+step.size <- 10000
+max.runs <- 1000000
+max.rel.var <- .Machine$double.eps^0.25
+
+# Boundary condition
+boundary <- "restricting"
+
+# Alpha parameter setting
+params <- c(1.0)
+
+# Make a small grid (3 x 3) for testing purposes
+x.coords <- seq(0.0, 3.0, 1.0)
+y.coords <- seq(0.0, 3.0, 1.0)
+test.grid <- MakeGridFromCoords(x.coords, y.coords)
+
+# Calculate the transition matrices for each different approximation method
+
+# Centroid-to-centroid transition matrix using Monte Carlo integration
+CC.mc <- LatticeTransitionProbs(
+  x1 = test.grid$x1, x2 = test.grid$x2, y1 = test.grid$y1, y2 = test.grid$y2,
+  func = genexp.disp, approx.method = "CC", boundary = boundary, max.prob = max.prob,
+  initial.step = initial.step, step.size = step.size, max.rel.var = max.rel.var, max.runs = max.runs, params = params)
+# Centroid-to-centroid transition matrix using analytic results
+CC.an <- LatticeTransitionProbs(
+  x1 = test.grid$x1, x2 = test.grid$x2, y1 = test.grid$y1, y2 = test.grid$y2,
+  func = "gaussian", approx.method = "CC", boundary = boundary, max.prob = max.prob,
+  initial.step = initial.step, step.size = step.size, max.rel.var = max.rel.var, max.runs = max.runs, params = params)
+
+# Centroid-to-area transition matrix using Monte Carlo integration
+CA.mc <- LatticeTransitionProbs(
+  x1 = test.grid$x1, x2 = test.grid$x2, y1 = test.grid$y1, y2 = test.grid$y2,
+  func = genexp.disp, approx.method = "CA", boundary = boundary, max.prob = max.prob,
+  initial.step = initial.step, step.size = step.size, max.rel.var = max.rel.var, max.runs = max.runs, params = params)
+# Centroid-to-area transition matrix using analytic results
+CA.an <- LatticeTransitionProbs(
+  x1 = test.grid$x1, x2 = test.grid$x2, y1 = test.grid$y1, y2 = test.grid$y2,
+  func = "gaussian", approx.method = "CA", boundary = boundary, max.prob = max.prob,
+  initial.step = initial.step, step.size = step.size, max.rel.var = max.rel.var, max.runs = max.runs, params = params)
+
+# Area-to-centroid transition matrix using Monte Carlo integration
+AC.mc <- LatticeTransitionProbs(
+  x1 = test.grid$x1, x2 = test.grid$x2, y1 = test.grid$y1, y2 = test.grid$y2,
+  func = genexp.disp, approx.method = "AC", boundary = boundary, max.prob = max.prob,
+  initial.step = initial.step, step.size = step.size, max.rel.var = max.rel.var, max.runs = max.runs, params = params)
+# Area-to-centroid transition matrix using analytic results
+AC.an <- LatticeTransitionProbs(
+  x1 = test.grid$x1, x2 = test.grid$x2, y1 = test.grid$y1, y2 = test.grid$y2,
+  func = "gaussian", approx.method = "AC", boundary = boundary, max.prob = max.prob,
+  initial.step = initial.step, step.size = step.size, max.rel.var = max.rel.var, max.runs = max.runs, params = params)
+
+# Area-to-area transition matrix using Monte Carlo integration
+AA.mc <- LatticeTransitionProbs(
+  x1 = test.grid$x1, x2 = test.grid$x2, y1 = test.grid$y1, y2 = test.grid$y2,
+  func = genexp.disp, approx.method = "AA", boundary = boundary, max.prob = max.prob,
+  initial.step = initial.step, step.size = step.size, max.rel.var = max.rel.var, max.runs = max.runs, params = params)
+# Area-to-area transition matrix using analytic results
+AA.an <- LatticeTransitionProbs(
+  x1 = test.grid$x1, x2 = test.grid$x2, y1 = test.grid$y1, y2 = test.grid$y2,
+  func = "gaussian", approx.method = "AA", boundary = boundary, max.prob = max.prob,
+  initial.step = initial.step, step.size = step.size, max.rel.var = max.rel.var, max.runs = max.runs, params = params)
+
+# Calculate the differences between the analytic and Monte Carlo results
+diff.CC <- CC.mc - CC.an
+diff.CA <- CA.mc - CA.an
+diff.AC <- AC.mc - AC.an
+diff.AA <- AA.mc - AA.an
+

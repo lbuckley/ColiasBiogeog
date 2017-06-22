@@ -112,8 +112,8 @@ grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, 
 ##  PLOTs
 
 #Fig 1. elev vs year for Jadult, Tpup, Tad    
-  
-  #dim(pup.temps)= 12 150 841 3
+
+#dim(pup.temps)= 12 150 841 3
 inds=1:150
 years= years[inds]
 
@@ -128,139 +128,204 @@ phen$Jadult[which(phen$Jadult==273)]=NA
 phen2= aggregate(phen, list(phen$ind), FUN=mean, na.rm=TRUE)
 plot(phen2$elev, phen2$Jadult)
 
-#Loop generations
-for(gen in 1:3){
+#JADULT
+#Jadult by gen
+phen1= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) ) 
+phen1$gen=1
+phen2= cbind(pts.sel, t(pup.temps["Jadult",inds,,2]) ) 
+phen2$gen=2
+phen3= cbind(pts.sel, t(pup.temps["Jadult",inds,,3]) ) 
+phen3$gen=3
+phen= rbind(phen1, phen2, phen3)
 
-  #Jadult by gen
-  phen= cbind(pts.sel, t(pup.temps["Jadult",inds,,gen]) ) 
-  #subset points
-  #phen= phen[site.ind,]
-  
-  phen= gather(phen, "year", "Jadult",9:(length(years)+8))
-  phen$year= years[as.numeric(phen$year)]
-  
-  #replace Jadult=273 with NA
-  phen$Jadult[which(phen$Jadult==273)]=NA
-  #remove NAs
-  phen= phen[which(!is.na(phen$Jadult)),]
-  
-  #sort by elevation
-  ord= order(pts.sel$elev)
-  z1= pup.temps["Jadult",inds,ord,1]
-  elevs= pts.sel$elev[ord]
-  dups= which(duplicated(elevs))
-  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
-  dups= which(duplicated(elevs))
-  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
-  dups= which(duplicated(elevs))
-  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
-  
-  #------------------
-  
-  #sample sites to faciliate visualization
-  #s.inds=sort(base::sample(1:nrow(phen),50000))  
-  phen1= phen #[s.inds,]
-  
-  #Interpolate
-  s=interp(phen1$year,phen1$elev,phen1$Jadult, duplicate="strip")
-  
-  gdat <- interp2xyz(s, data.frame=TRUE)
-  
-  plot.Jad= ggplot(gdat) + 
-    aes(x = x, y = y, z = z, fill = z) + 
-    geom_tile() + 
-    scale_fill_distiller(palette="Spectral", na.value="white", name="Jadult") +
-    theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")+ xlim(150, 270)
- 
-  #============================================================================
-  #Tpup
-  phen= cbind(pts.sel, t(pup.temps["Tpup",inds,,gen]) ) 
-  phen= gather(phen, "year", "Tpup",9:(length(years)+8))
-  phen$year= years[as.numeric(phen$year)]
-  
-  #sort by elevation
-  ord= order(pts.sel$elev)
-  z1= pup.temps["Tpup",inds,ord,1]
-  elevs= pts.sel$elev[ord]
-  dups= which(duplicated(elevs))
-  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
-  dups= which(duplicated(elevs))
-  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
-  dups= which(duplicated(elevs))
-  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
-  
-  #------------------
-  
-  #sample sites to faciliate visualization
-  #s.inds=sort(base::sample(1:nrow(phen),10000))  
-  #phen1= phen[s.inds,]
-  phen1= na.omit(phen)
-  
-  #Interpolate
-  s=interp(phen1$year,phen1$elev,phen1$Tpup, duplicate="strip")
-  
-  gdat <- interp2xyz(s, data.frame=TRUE)
-  
-  plot.Tpup= ggplot(gdat) + 
-    aes(x = x, y = y, z = z, fill = z) + 
-    geom_tile() + 
-    scale_fill_distiller(palette="Spectral", na.value="white", name="Tpup") +
-    theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
-  
-  #------------------------------------
-  #Tad
-  phen= cbind(pts.sel, t(pup.temps["Tad",inds,,gen]) ) 
-  phen= gather(phen, "year", "Tad",9:(length(years)+8))
-  phen$year= years[as.numeric(phen$year)]
-  
-  #sort by elevation
-  ord= order(pts.sel$elev)
-  z1= pup.temps["Tad",inds,ord,1]
-  elevs= pts.sel$elev[ord]
-  dups= which(duplicated(elevs))
-  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
-  dups= which(duplicated(elevs))
-  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
-  dups= which(duplicated(elevs))
-  elevs[dups]=elevs[dups]+0.2 #adjust duplicated elevations
-  
-  #------------------
-  
-  #sample sites to faciliate visualization
-  #s.inds=sort(base::sample(1:nrow(phen),50000))  
-  #phen1= phen[s.inds,]
-  
-  phen1= na.omit(phen)
-  #cut coldest temp to facilitate color scale
-  phen1= phen1[which(phen1$Tad>7),]
-  
-  #Interpolate
-  s=interp(phen1$year,phen1$elev,phen1$Tad, duplicate="strip")
-  #, xo=seq(min(phen1$year), max(phen1$year), length = 80), yo=seq(min(phen1$elev), max(phen1$elev), length = 80))
-  
-  gdat <- interp2xyz(s, data.frame=TRUE)
-  
-  plot.Tad= ggplot(gdat) + 
-    aes(x = x, y = y, z = z, fill = z) + 
-    geom_tile() + 
-    scale_fill_distiller(palette="Spectral", na.value="white", name="Tad") +
-    theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom")
-  
-  if(gen==1){plot.Jad1=plot.Jad; plot.Tpup1=plot.Tpup; plot.Tad1=plot.Tad}
-  if(gen==2){plot.Jad2=plot.Jad; plot.Tpup2=plot.Tpup; plot.Tad2=plot.Tad}
-  if(gen==3){plot.Jad3=plot.Jad; plot.Tpup3=plot.Tpup; plot.Tad3=plot.Tad}
-   
-} #end loop generations
-  
-  #------------------------------------
-  # plot together
-  setwd(paste(fdir,"figures\\", sep=""))
-  
-  pdf("Fig1_FigJadTpupTad.pdf", height=7, width=10)
-  grid.arrange(plot.Jad1, plot.Tpup1, plot.Tad1,plot.Jad2, plot.Tpup2, plot.Tad2, ncol = 3, nrow=2)
-  dev.off()
-# plot.Jad3, plot.Tpup3, plot.Tad3,
-  
+phen= gather(phen, "year", "Jadult",9:(length(years)+8))
+phen$year= years[as.numeric(phen$year)]
+
+#replace Jadult=273 with NA
+phen$Jadult[which(phen$Jadult==273)]=NA
+#remove NAs
+#phen= phen[which(!is.na(phen$Jadult)),]
+
+#time periods
+phen$yr.cut= cut(phen$year, breaks=c(1950,1980,2010,2040,2070,2100),labels=c("1950_1980","2010","2040","2070","2100") )
+
+#restrict to sites with 3 generations in all years
+phen.3gen= ddply(phen, .(ind,elev), summarize, Jadult=mean(Jadult,na.rm=FALSE))
+phen.3gen= na.omit(phen.3gen)
+phen1= phen[which(phen$ind %in% phen.3gen$ind),]
+
+#mean across years
+phen2= ddply(phen1, .(ind,elev, yr.cut,gen), summarize, Jadult=mean(Jadult,na.rm=TRUE))
+#remove NAs
+phen2= phen2[which(!is.na(phen2$Jadult)),]
+
+#select time
+phen1980= phen2[which(phen2$yr.cut=="1950_1980"),]
+phen2040= phen2[which(phen2$yr.cut=="2040"),]
+
+#match
+phen1980$id= paste(phen1980$ind, phen1980$gen)
+phen2040$id= paste(phen2040$ind, phen2040$gen)
+match1= match(phen1980$id, phen2040$id)
+phen2040$Jadult1980= phen1980$Jadult[match1]
+#diff
+phen2040$Jadult_diff= phen2040$Jadult - phen2040$Jadult1980
+
+#Interpolate
+s=interp(x=phen1980$gen,y=phen1980$elev,z=phen1980$Jadult, duplicate="mean", xo=c(1,2,3))
+
+gdat <- interp2xyz(s, data.frame=TRUE)
+
+plot.Jad= ggplot(gdat) + 
+  aes(x = x, y = y, z = z, fill = z) + 
+  geom_tile() + 
+  scale_fill_distiller(palette="Spectral", na.value="white", name="DOY adult") +
+  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")+annotate("text", x=1,y=3000, label= "1951-1980", size=5)
+
+#----------------
+s=interp(x=phen2040$gen,y=phen2040$elev,z=phen2040$Jadult_diff, duplicate="mean", xo=c(1,2,3))
+
+gdat <- interp2xyz(s, data.frame=TRUE)
+
+plot.Jad2040= ggplot(gdat) + 
+  aes(x = x, y = y, z = z, fill = z) + 
+  geom_tile() + 
+  scale_fill_distiller(palette="Spectral", na.value="white", name="DOY adult") +
+  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")+annotate("text", x=1,y=3000, label= "2011-2040", size=5)
+
+#-------------------------------
+#Tpup
+#Tpup by gen
+phen1= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) ) 
+phen1$gen=1
+phen2= cbind(pts.sel, t(pup.temps["Tpup",inds,,2]) ) 
+phen2$gen=2
+phen3= cbind(pts.sel, t(pup.temps["Tpup",inds,,3]) ) 
+phen3$gen=3
+phen= rbind(phen1, phen2, phen3)
+
+phen= gather(phen, "year", "Tpup",9:(length(years)+8))
+phen$year= years[as.numeric(phen$year)]
+
+#remove NAs
+#phen= phen[which(!is.na(phen$Tpup)),]
+
+#time periods
+phen$yr.cut= cut(phen$year, breaks=c(1950,1980,2010,2040,2070,2100),labels=c("1950_1980","2010","2040","2070","2100") )
+
+#restrict to sites with 3 generations in all years
+phen.3gen= ddply(phen, .(ind,elev), summarize, Tpup=mean(Tpup,na.rm=FALSE))
+phen.3gen= na.omit(phen.3gen)
+phen1= phen[which(phen$ind %in% phen.3gen$ind),]
+
+#mean across years
+phen2= ddply(phen1, .(ind,elev, yr.cut,gen), summarize, Tpup=mean(Tpup,na.rm=TRUE))
+
+#select time
+phen1980= phen2[which(phen2$yr.cut=="1950_1980"),]
+phen2040= phen2[which(phen2$yr.cut=="2040"),]
+
+#match
+phen1980$id= paste(phen1980$ind, phen1980$gen)
+phen2040$id= paste(phen2040$ind, phen2040$gen)
+match1= match(phen1980$id, phen2040$id)
+phen2040$Tpup1980= phen1980$Tpup[match1]
+#diff
+phen2040$Tpup_diff= phen2040$Tpup - phen2040$Tpup1980
+
+#Interpolate
+s=interp(x=phen1980$gen,y=phen1980$elev,z=phen1980$Tpup, duplicate="mean", xo=c(1,2,3))
+
+gdat <- interp2xyz(s, data.frame=TRUE)
+
+plot.Tpup= ggplot(gdat) + 
+  aes(x = x, y = y, z = z, fill = z) + 
+  geom_tile() + 
+  scale_fill_distiller(palette="Spectral", na.value="white", name="Tpup (°C)") +
+  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")
+#----------------
+#remove anomolous sites with large temp declines to prevent legend issues
+s=interp(x=phen2040$gen,y=phen2040$elev,z=phen2040$Tpup_diff, duplicate="mean", xo=c(1,2,3))
+
+gdat <- interp2xyz(s, data.frame=TRUE)
+
+plot.Tpup2040= ggplot(gdat) + 
+  aes(x = x, y = y, z = z, fill = z) + 
+  geom_tile() + 
+  scale_fill_distiller(palette="Spectral", na.value="white", name="Tpup (°C)", limits=c(-1.11,2.6) ) +
+  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")
+#set limit to omit 1 outlier
+
+#-------------------------------
+#Tad
+#Tad by gen
+phen1= cbind(pts.sel, t(pup.temps["Tad",inds,,1]) ) 
+phen1$gen=1
+phen2= cbind(pts.sel, t(pup.temps["Tad",inds,,2]) ) 
+phen2$gen=2
+phen3= cbind(pts.sel, t(pup.temps["Tad",inds,,3]) ) 
+phen3$gen=3
+phen= rbind(phen1, phen2, phen3)
+
+phen= gather(phen, "year", "Tad",9:(length(years)+8))
+phen$year= years[as.numeric(phen$year)]
+
+#remove NAs
+#phen= phen[which(!is.na(phen$Tad)),]
+
+#time periods
+phen$yr.cut= cut(phen$year, breaks=c(1950,1980,2010,2040,2070,2100),labels=c("1950_1980","2010","2040","2070","2100") )
+
+#restrict to sites with 3 generations in all years
+phen.3gen= ddply(phen, .(ind,elev), summarize, Tad=mean(Tad,na.rm=FALSE))
+phen.3gen= na.omit(phen.3gen)
+phen1= phen[which(phen$ind %in% phen.3gen$ind),]
+
+#mean across years
+phen2= ddply(phen1, .(ind,elev, yr.cut,gen), summarize, Tad=mean(Tad,na.rm=TRUE))
+
+#select time
+phen1980= phen2[which(phen2$yr.cut=="1950_1980"),]
+phen2040= phen2[which(phen2$yr.cut=="2040"),]
+
+#match
+phen1980$id= paste(phen1980$ind, phen1980$gen)
+phen2040$id= paste(phen2040$ind, phen2040$gen)
+match1= match(phen1980$id, phen2040$id)
+phen2040$Tad1980= phen1980$Tad[match1]
+#diff
+phen2040$Tad_diff= phen2040$Tad - phen2040$Tad1980
+
+#Interpolate
+s=interp(x=phen1980$gen,y=phen1980$elev,z=phen1980$Tad, duplicate="mean", xo=c(1,2,3))
+
+gdat <- interp2xyz(s, data.frame=TRUE)
+
+plot.Tad= ggplot(gdat) + 
+  aes(x = x, y = y, z = z, fill = z) + 
+  geom_tile() + 
+  scale_fill_distiller(palette="Spectral", na.value="white", name="Tad (°C)") +
+  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")
+#----------------
+s=interp(x=phen2040$gen,y=phen2040$elev,z=phen2040$Tad_diff, duplicate="mean", xo=c(1,2,3))
+
+gdat <- interp2xyz(s, data.frame=TRUE)
+
+plot.Tad2040= ggplot(gdat) + 
+  aes(x = x, y = y, z = z, fill = z) + 
+  geom_tile() + 
+  scale_fill_distiller(palette="Spectral", na.value="white", name="Tad (°C)") +
+  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")
+
+#=============================
+
+# plot together
+setwd(paste(fdir,"figures\\", sep=""))
+
+pdf("Fig1_FigJadTpupTad.pdf", height=7, width=10)
+grid.arrange(plot.Jad, plot.Tpup, plot.Tad, plot.Jad2040, plot.Tpup2040, plot.Tad2040, ncol = 3, nrow=2)
+dev.off()
+
   #=====================================================
   
 #Fig 2. PLOT FITNESS CURVES
@@ -307,20 +372,21 @@ for(gen in 1:3){
   fc$abs= abs[as.numeric(fc$abs)]  
   fc$year= as.numeric(fc$year)
   
-  fc$yr.cut= cut(fc$elev, breaks=c(1950,1980,2010,2040,2070,2100),labels=c("1950_1980","2010","2040","2070","2100") )
+  fc$yr.cut= cut(fc$year, breaks=c(1950,1980,2010,2040,2070,2100),labels=c("1950_1980","2010","2040","2070","2100") )
   
   #pick time period
   #mean across years
   fc1= ddply(fc, .(ind,elev,yr.cut,abs), summarize, lambda=mean(lambda,na.rm=TRUE))
-  fc2= fc1[which(fc1$yr.cut=="2010"),]
   
   #yrs= c(1950,1980,2010,2040,2070,2100)
   yrs= c(1980,2010,2040,2070)
+  yr.cuts= c("1950_1980","2010","2040","2070","2100")
   
   for(yr.k in 1:length(yrs)){
     
     #pick year
-    fc2= fc[which(fc$year==yrs[yr.k] ),]
+    fc2=  fc1[which(fc1$yr.cut==yr.cuts[yr.k] ),]
+    #fc2= fc[which(fc$year==yrs[yr.k] ),]
     
     #Interpolate
     s=interp(fc2$elev,fc2$abs,fc2$lambda, duplicate="mean")
@@ -330,7 +396,7 @@ for(gen in 1:3){
       aes(x = x, y = y, z = z, fill = z) + 
       geom_tile() + 
       scale_fill_distiller(palette="Spectral", na.value="white", name="lambda") +
-      theme_bw(base_size=16)+xlab("elevation (m)")+ylab("absorptivity")+theme(legend.position="bottom") +annotate("text", x=2000,y=0.68, label= paste(yrs[yr.k],"gen",gen.k,sep=" "), size=5)
+      theme_bw(base_size=16)+xlab("elevation (m)")+ylab("absorptivity")+theme(legend.position="bottom") +annotate("text", x=2000,y=0.68, label= paste(yr.cuts[yr.k],"gen",gen.k,sep=" "), size=5)
     
     if(yr.k==1 & gen.k==1)plot.lambda1980.g1= plot.lambda
     if(yr.k==2 & gen.k==1)plot.lambda2010.g1= plot.lambda
@@ -347,7 +413,7 @@ for(gen in 1:3){
   
   #-------------------
   setwd(paste(fdir,"figures\\",sep="") )
-  pdf("Fig2_FitnessCurves_elevs.pdf", height = 8, width = 12)
+  pdf("Fig2_FitnessCurves_elevs.pdf", height = 7, width = 12)
   
   grid_arrange_shared_legend(plot.lambda1980.g1,plot.lambda2010.g1,plot.lambda2040.g1,plot.lambda2070.g1,plot.lambda1980.g2,plot.lambda2010.g2,plot.lambda2040.g2,plot.lambda2070.g2, ncol = 4, nrow = 2)
   
@@ -526,7 +592,7 @@ for(gen in 1:3){
       plot.abs= ggplot(gdat) + 
         aes(x = x, y = y, z = z, fill = z) + 
         geom_tile() + 
-        scale_fill_distiller(palette="Spectral", na.value="white", name="lambda") +
+        scale_fill_distiller(palette="Spectral", na.value="white", name="absorptivity") +
         theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") +annotate("text", x=2000,y=1500, label= fc$scen.name[1], size=5)
       
       if(scen.k==1 & gen.k==1)plot.abs.scen1.g1= plot.abs
@@ -692,14 +758,13 @@ for(scen.k in 1:5){
   #OLD VERSION
   #lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
 
-  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
 
-  lper2.map<- map1 + geom_raster(data=lper2, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+  lper2.map<- map1 + geom_raster(data=lper2, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
   
-  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
   
-  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
-  
+  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
   #-------------
   
   #ABS
@@ -734,13 +799,13 @@ for(scen.k in 1:5){
 #OLD VERSION  
 #  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
   
-  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
   
-  aper2.map<- map1 + geom_raster(data=aper2, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+  aper2.map<- map1 + geom_raster(data=aper2, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
   
-  aper3.map<- map1 + geom_raster(data=aper3, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+  aper3.map<- map1 + geom_raster(data=aper3, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
   
-  aper4.map<- map1 + geom_raster(data=aper4, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")
+  aper4.map<- map1 + geom_raster(data=aper4, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
   
   #----------
   if(scen.k==1) {lper1.1=lper1.map; aper1.1=aper1.map;lper2.1=lper2.map; aper2.1=aper2.map; lper3.1=lper3.map; aper3.1=aper3.map; lper4.1=lper4.map; aper4.1=aper4.map}
@@ -805,5 +870,24 @@ dev.off()
 
 #lper1.1,lper2.1,lper3.1,lper4.1,lper1.2,lper2.2,lper3.2,lper4.2, 
 
+#======================================================
+#UPDATE MAPS, ABBREVIATE
 
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#FIG. 4: ABS MAP
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Fig4_Abs_map.pdf", height = 3, width = 12)
+
+grid_arrange_shared_legend(aper3.3,aper3.4,aper3.5, ncol = 3, nrow = 1)
+
+dev.off()
+
+#-------------
+#FIG. 5: LAMBDA MAP
+
+pdf("Fig5_Lambda_map.pdf", height = 3, width = 12)
+
+grid_arrange_shared_legend(lper3.3,lper3.4,lper3.5, ncol = 3, nrow = 1)
+
+dev.off()
+
+
