@@ -1347,7 +1347,7 @@ for(gen.k in 1:2){
   if(gen.k==1) fcl=l1
   if(gen.k==2) fcl=l2
   
-  for(scen.k in 1:length(scens)){
+  for(scen.k in 1:4){
     
     #pick scenarios
     fc= fcl[which(fcl$scen==scen.k),]
@@ -1359,7 +1359,7 @@ for(gen.k in 1:2){
     fc= fc[which(!is.na(fc$lambda)),]
     
     #sample
-   if(nrow(fc)>5000 ) inds= base::sample(1:nrow(fc),50000, replace=FALSE)
+   if(nrow(fc)>50000 ) inds= base::sample(1:nrow(fc),50000, replace=FALSE)
     fc=fc[inds,]
     
     #Interpolate
@@ -1370,7 +1370,7 @@ for(gen.k in 1:2){
       aes(x = x, y = y, z = z, fill = z) + 
       geom_tile() + 
       scale_fill_distiller(palette="Spectral", na.value="white", name="lambda") +
-      theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") +annotate("text", x=2000,y=1500, label= "test", size=5)
+      theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") +annotate("text", x=2000,y=1500, label= fc$scen.name[1], size=5)
     
     if(scen.k==1 & gen.k==1)plot.lambda.scen1.g1= plot.lambda
     if(scen.k==2 & gen.k==1)plot.lambda.scen2.g1= plot.lambda
@@ -1385,14 +1385,6 @@ for(gen.k in 1:2){
   } #end loop scenario
   
 } #end loop generation
-
-#-------------------
-setwd(paste(fdir,"figures\\",sep="") )
-pdf("Fig4_FitnessSurf_scen.pdf", height = 8, width = 12)
-
-grid_arrange_shared_legend(plot.lambda.scen1.g1,plot.lambda.scen2.g1,plot.lambda.scen3.g1,plot.lambda.scen4.g1,plot.lambda.scen1.g2,plot.lambda.scen2.g2,plot.lambda.scen3.g2,plot.lambda.scen4.g2, ncol = 4, nrow = 2)
-
-dev.off()  
 
 #====================================
 #Compare absorptivities
@@ -1443,12 +1435,12 @@ l3$scen.name= scens[l3$scen+1]
 #surface version of figure
 
 #LAMBDA
-for(gen.k in 1:2){
+for(gen.k in 1:1){
   
   if(gen.k==1) fcl=l1
   if(gen.k==2) fcl=l2
   
-  for(scen.k in 1:length(scens)){
+  for(scen.k in 1:4){
     
     #pick scenarios
     fc= fcl[which(fcl$scen==scen.k),]
@@ -1460,7 +1452,7 @@ for(gen.k in 1:2){
     fc= fc[which(!is.na(fc$abs)),]
     
     #sample
-    if(nrow(fc)>5000 ) inds= base::sample(1:nrow(fc),50000, replace=FALSE)
+    if(nrow(fc)>50000 ) inds= base::sample(1:nrow(fc),50000, replace=FALSE)
     fc=fc[inds,]
     
     #Interpolate
@@ -1471,7 +1463,7 @@ for(gen.k in 1:2){
       aes(x = x, y = y, z = z, fill = z) + 
       geom_tile() + 
       scale_fill_distiller(palette="Spectral", na.value="white", name="lambda") +
-      theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") +annotate("text", x=2000,y=1500, label= "test", size=5)
+      theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") +annotate("text", x=2000,y=1500, label= fc$scen.name[1], size=5)
     
     if(scen.k==1 & gen.k==1)plot.abs.scen1.g1= plot.abs
     if(scen.k==2 & gen.k==1)plot.abs.scen2.g1= plot.abs
@@ -1487,3 +1479,18 @@ for(gen.k in 1:2){
   
 } #end loop generation
 
+#-------------------
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Fig4_LambdaSurf_scen.pdf", height = 8, width = 12)
+
+grid_arrange_shared_legend(plot.lambda.scen1.g1,plot.lambda.scen2.g1,plot.lambda.scen3.g1,plot.lambda.scen4.g1,plot.lambda.scen1.g2,plot.lambda.scen2.g2,plot.lambda.scen3.g2,plot.lambda.scen4.g2, ncol = 4, nrow = 2)
+
+dev.off()  
+
+#-----------------
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("Fig4_AbsSurf_scen.pdf", height = 4, width = 9)
+
+grid_arrange_shared_legend(plot.abs.scen2.g1, plot.abs.scen3.g1, plot.abs.scen4.g1, ncol = 3, nrow = 1)
+
+dev.off() 
