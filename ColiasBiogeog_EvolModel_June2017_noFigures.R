@@ -358,11 +358,8 @@ lambda.mean <- readRDS("lambdamean.abs")
 #***  https://rdrr.io/rforge/ecomodtools/man/LatticeTransitionProbs.html
 
 #------------------------------------
-install.packages("ecomodtools", repos="http://R-Forge.R-project.org")
-library(ecomodtools)
-
-
-LatticeTransitionProbs(x1, x2, y1, y2, func, approx.method = "AA", boundary = "absorbing", max.prob = .Machine$double.eps^0.25, initial.step = 10000, step.size = 10000, max.rel.var = .Machine$double.eps^0.25, max.runs = 1000000, params = NULL, ...)
+#install.packages("ecomodtools", repos="http://R-Forge.R-project.org")
+#library(ecomodtools)
 
 # 2D Gaussian dispersal function defined according to Clark et al. (1999)
 # Used in the Monte Carlo integration
@@ -374,9 +371,9 @@ genexp.disp <- function(from, to, params)
 
 # Monte Carlo integration settings
 max.prob <- .Machine$double.eps^0.25
-initial.step <- 10000
-step.size <- 10000
-max.runs <- 1000000
+initial.step <-1 #10000
+step.size <-1 #10000
+max.runs <-100 #1000000
 max.rel.var <- .Machine$double.eps^0.25
 
 # Boundary condition
@@ -389,6 +386,14 @@ params <- c(1.0)
 x.coords <- seq(0.0, 3.0, 1.0)
 y.coords <- seq(0.0, 3.0, 1.0)
 test.grid <- MakeGridFromCoords(x.coords, y.coords)
+
+##Manually make grid
+x1= c(1,2,3,1,2,3,1,2,3)
+x2= c(2,3,4,2,3,4,2,3,4)
+y1= c(1,1,1,2,2,2,3,3,3)
+y2= c(2,2,2,3,3,3,4,4,4)
+test.grid= as.data.frame(cbind(x1,x2,y1,y2))
+
 
 # Calculate the transition matrices for each different approximation method
 
@@ -442,3 +447,95 @@ diff.CA <- CA.mc - CA.an
 diff.AC <- AC.mc - AC.an
 diff.AA <- AA.mc - AA.an
 
+#=======================================
+# https://www.r-bloggers.com/continuous-dispersal-on-a-discrete-lattice/
+
+# General function to take in a lattice and disperse
+## according to a user provided dispersal kernel
+## Author: Corey Chivers
+lat_disp<-function(pop,kernel,...)
+{
+  lattice_size<-dim(pop)
+  new_pop<-array(0,dim=lattice_size)
+  for(i in 1:lattice_size[1])
+  {
+    for(j in 1:lattice_size[2])
+    {
+      N<-pop[i,j]
+      dist<-kernel(N,...)
+      theta<-runif(N,0,2*pi)
+      x<-cos(theta)*dist
+      y<-sin(theta)*dist
+      
+      for(k in 1:N)
+      {
+        x_ind<-round(i+x[k]) %% lattice_size[1]
+        y_ind<-round(j+y[k]) %% lattice_size[2]
+        new_pop[x_ind,y_ind]<-new_pop[x_ind,y_ind]+1
+      }
+    }
+  }
+  return(new_pop)
+}
+
+############## Run and plot #######################
+
+## Custom colour ramp
+colours<-c('grey','blue','black')
+cus_col<-colorRampPalette(colors=colours, space = c("rgb", "Lab"),interpolate = c("linear", "spline"))
+
+## Initialize population array
+Time=35
+pop<-array(0,dim=c(Time,50,50))
+pop[1,25,25]<-10000
+
+### Normal Kernel ###
+par(mfrow=c(1,1))
+for(i in 2:Time)
+{
+  image(pop[i-1,,],col=cus_col(100),xaxt='n',yaxt='n')
+  pop[i,,]<-lat_disp(pop[i-1,,],kernel=rnorm,mean=0,sd=1)
+}
+
+## Plot
+png('normal_kern.png', width = 800, height = 800)
+par(mfrow=c(2,2),pty='s',omi=c(0.1,0.1,0.5,0.1),mar=c(2,0,2,0))
+times<-c(5,15,25,35)
+for(i in times)
+  image(pop[i-1,,],
+        col=cus_col(100),
+        xaxt='n',
+        yaxt='n',
+        useRaster=TRUE,
+        main=paste("Time =",i))
+
+mtext("Gaussian Kernel",outer=TRUE,cex=1.5)
+dev.off()
+
+### Exponential Kernel ###
+par(mfrow=c(1,1))
+for(i in 2:Time)
+{
+  image(pop[i-1,,],col=cus_col(100),xaxt='n',yaxt='n')
+  pop[i,,]<-lat_disp(pop[i-1,,],kernel=rexp,rate=1)
+}
+
+## Plot
+png('exp_kern.png',  width = 800, height = 800)
+par(mfrow=c(2,2),pty='s',omi=c(0.1,0.1,0.5,0.1),mar=c(2,0,2,0))
+times<-c(5,15,25,35)
+for(i in times)
+  image(pop[i-1,,],
+        col=cus_col(100),
+        xaxt='n',
+        yaxt='n',
+        useRaster=TRUE,
+        main=paste("Time =",i))
+
+mtext("Exponential Kernel",outer=TRUE,cex=1.5)
+dev.off()
+
+
+
+
+ 

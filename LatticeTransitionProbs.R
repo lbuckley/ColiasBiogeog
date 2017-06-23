@@ -1,6 +1,6 @@
 # SEE: https://rdrr.io/rforge/ecomodtools/man/LatticeTransitionProbs.html
 
-LatticeTransitionProbs(x1, x2, y1, y2, func, approx.method = "AA", boundary = "absorbing", max.prob = .Machine$double.eps^0.25, initial.step = 10000, step.size = 10000, max.rel.var = .Machine$double.eps^0.25, max.runs = 1000000, params = NULL, ...)
+#LatticeTransitionProbs(x1, x2, y1, y2, func, approx.method = "AA", boundary = "absorbing", max.prob = .Machine$double.eps^0.25, initial.step = 10000, step.size = 10000, max.rel.var = .Machine$double.eps^0.25, max.runs = 1000000, params = NULL, ...)
 
 ## Function to calculate cell-to-cell transition probabilities
 #
