@@ -17,6 +17,12 @@ library(arrayhelpers)
 library(gridExtra)
 library(akima) #for interpolation
 library(scales)
+
+#pick projection
+proj.k=2
+projs=c("bcc-csm","ccsm4","gfdl")
+
+years= 1950:2099
 #-----------------------------
 #Load data
     
@@ -163,6 +169,9 @@ phen2= phen2[which(!is.na(phen2$Jadult)),]
 phen1980= phen2[which(phen2$yr.cut=="1950_1980"),]
 phen2040= phen2[which(phen2$yr.cut=="2040"),]
 
+##Save Tpupal
+Jad1980= phen1980
+
 #match
 phen1980$id= paste(phen1980$ind, phen1980$gen)
 phen2040$id= paste(phen2040$ind, phen2040$gen)
@@ -224,6 +233,9 @@ phen2= ddply(phen1, .(ind,elev, yr.cut,gen), summarize, Tpup=mean(Tpup,na.rm=TRU
 #select time
 phen1980= phen2[which(phen2$yr.cut=="1950_1980"),]
 phen2040= phen2[which(phen2$yr.cut=="2040"),]
+
+##Save Tpupal
+Tpup1980= phen1980
 
 #match
 phen1980$id= paste(phen1980$ind, phen1980$gen)
@@ -889,5 +901,63 @@ pdf("Fig5_Lambda_map.pdf", height = 3, width = 12)
 grid_arrange_shared_legend(lper3.3,lper3.4,lper3.5, ncol = 3, nrow = 1)
 
 dev.off()
+
+#====================================================
+
+#Fig 0. Maps
+#a: color= elevation
+#b: color= Tpupal (1st gen)
+#c: color= DOY adult (1st gen)
+
+#Jadult
+phen1= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) ) 
+phen1$gen=1
+#extract 1950-1980
+phen1=phen1[,1:(9+31)]
+#mean across years
+phen1$Jadult= rowMeans(phen1[,9:40] )
+
+#Tpupal
+phen2= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) ) 
+phen2$gen=1
+#extract 1950-1980
+phen2=phen2[,1:(9+31)]
+#mean across years
+phen2$Tpupal= rowMeans(phen2[,9:40] )
+
+#Jadult and Tpupal
+phen= cbind(phen1[,c(1:8)], phen1$Jadult, phen2$Tpupal)
+
+#-----------------
+
+#set up map
+bbox <- ggmap::make_bbox(lon, lat, phen, f = 0.1)
+map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
+map1=ggmap(map_loc, margins=FALSE)
+
+#elevation
+Elev<- map1 + geom_raster(data=phen, aes(fill = elev), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="bottom")+xlab(NULL)+ylab(NULL)+ scale_fill_gradientn(colours=matlab.like(10))+labs(color="Elevation (m)")
+
+#Jadult
+Jadult<- map1 + geom_raster(data=phen, aes(fill = phen1$Jadult), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="bottom")+xlab(NULL)+ylab(NULL)+ scale_fill_gradientn(colours=matlab.like(10))+labs(color="Phenology (doy)")
+
+#Tpupal
+Tpupal<- map1 + geom_raster(data=phen, aes(fill = phen2$Tpupal), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="bottom")+xlab(NULL)+ylab(NULL)+ scale_fill_gradientn(colours=matlab.like(10))+labs(color="Pupal temperature (°C)")
+
+#plot together
+library(cowplot)
+
+setwd(paste(fdir, "figures\\", sep=""))
+pdf("Fig0_map.pdf", height=5, width=12)
+
+plot_grid(Elev, Jadult, Tpupal, align = "h", nrow = 1, rel_heights = c(1))
+
+dev.off()
+
+
+#-------------
+
+
+
 
 
