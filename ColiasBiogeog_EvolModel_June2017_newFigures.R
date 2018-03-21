@@ -17,6 +17,7 @@ library(arrayhelpers)
 library(gridExtra)
 library(akima) #for interpolation
 library(scales)
+library(RColorBrewer)
 
 #pick projection
 proj.k=2
@@ -49,6 +50,7 @@ counts= rowSums(is.na(pup.temps[6,,,1]))
 
 inds=1:150
 years= years[inds]
+yr.inds=1:150
 
 #--------------------------
 #Read optimal absorptivity
@@ -117,11 +119,62 @@ grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, 
 #=====================================================
 ##  PLOTs
 
-#Fig 1. elev vs year for Jadult, Tpup, Tad    
-
-#dim(pup.temps)= 12 150 841 3
 inds=1:150
 years= years[inds]
+
+#Fig 0. Maps
+#a: color= elevation
+#b: color= Tpupal (1st gen)
+#c: color= DOY adult (1st gen)
+
+#Jadult
+phen1= cbind(pts.sel, t(pup.temps["Jadult",yr.inds,,1]) ) 
+phen1$gen=1
+#extract 1950-1980
+phen1=phen1[,1:(9+31)]
+#mean across years
+phen1$Jadult= rowMeans(phen1[,9:40] )
+
+#Tpupal
+phen2= cbind(pts.sel, t(pup.temps["Tpup",yr.inds,,1]) ) 
+phen2$gen=1
+#extract 1950-1980
+phen2=phen2[,1:(9+31)]
+#mean across years
+phen2$Tpupal= rowMeans(phen2[,9:40] )
+
+#Jadult and Tpupal
+phen= cbind(phen1[,c(1:8)], phen1$Jadult, phen2$Tpupal)
+
+#-----------------
+
+#set up map
+bbox <- ggmap::make_bbox(lon, lat, phen, f = 0.1)
+map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
+map1=ggmap(map_loc, margins=FALSE)
+
+#elevation
+Elev<- map1 + geom_raster(data=phen, aes(fill = elev), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="bottom")+xlab("")+ylab("Latitude (°)")+ scale_fill_gradientn(colours=matlab.like(10), name="Elevation (m)")+ theme(legend.key.width=unit(0.8,"cm"))
+
+#Jadult
+Jadult<- map1 + geom_raster(data=phen, aes(fill = phen1$Jadult), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="bottom")+xlab("Longitude (°)")+ylab(NULL)+ scale_fill_gradientn(colours=matlab.like(10), name="Phenology (doy)")+ theme(legend.key.width=unit(0.8,"cm"))
+
+#Tpupal
+Tpupal<- map1 + geom_raster(data=phen, aes(fill = phen2$Tpupal), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="bottom")+xlab("")+ylab(NULL)+ scale_fill_gradientn(colours=matlab.like(10), name="Pupal temperature (°C)")+ theme(legend.key.width=unit(0.8,"cm"))
+
+#plot together
+library(cowplot)
+
+setwd(paste(fdir, "figures\\", sep=""))
+pdf("Fig0_map.pdf", height=8, width=12)
+
+plot_grid(Elev, Jadult, Tpupal, align = "h", ncol = 3, rel_widths = c(1.1,1,1))
+
+dev.off()
+
+#---------------------------------
+
+#Fig 1. elev vs year for Jadult, Tpup, Tad    
 
 #Assess number generations
 phen= cbind(pts.sel, t(pup.temps["Jadult",,,3]) ) 
@@ -136,11 +189,11 @@ plot(phen2$elev, phen2$Jadult)
 
 #JADULT
 #Jadult by gen
-phen1= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) ) 
+phen1= cbind(pts.sel, t(pup.temps["Jadult",yr.inds,,1]) ) 
 phen1$gen=1
-phen2= cbind(pts.sel, t(pup.temps["Jadult",inds,,2]) ) 
+phen2= cbind(pts.sel, t(pup.temps["Jadult",yr.inds,,2]) ) 
 phen2$gen=2
-phen3= cbind(pts.sel, t(pup.temps["Jadult",inds,,3]) ) 
+phen3= cbind(pts.sel, t(pup.temps["Jadult",yr.inds,,3]) ) 
 phen3$gen=3
 phen= rbind(phen1, phen2, phen3)
 
@@ -180,6 +233,9 @@ phen2040$Jadult1980= phen1980$Jadult[match1]
 #diff
 phen2040$Jadult_diff= phen2040$Jadult - phen2040$Jadult1980
 
+#----------------------------
+#PLOT
+
 #Interpolate
 s=interp(x=phen1980$gen,y=phen1980$elev,z=phen1980$Jadult, duplicate="mean", xo=c(1,2,3))
 
@@ -188,8 +244,12 @@ gdat <- interp2xyz(s, data.frame=TRUE)
 plot.Jad= ggplot(gdat) + 
   aes(x = x, y = y, z = z, fill = z) + 
   geom_tile() + 
-  scale_fill_distiller(palette="Spectral", na.value="white", name="DOY adult") +
-  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")+annotate("text", x=1,y=3000, label= "1951-1980", size=5)
+  scale_fill_distiller(palette="Spectral", na.value="white", name="doy") +
+  theme_classic(base_size=16)+xlab(NULL)+ylab("elevation (m)")+theme(legend.position="bottom")+labs(title= "baseline (1951-1980)")+
+  theme(plot.title = element_text(size = 16))+
+  theme(legend.margin=margin(-6,0,0,0) )+ theme(legend.key.width=unit(0.8,"cm")) +theme(axis.title.x=element_blank())
+
+#+annotate("text", x=1,y=3000, label= "1951-1980", size=5)
 
 #----------------
 s=interp(x=phen2040$gen,y=phen2040$elev,z=phen2040$Jadult_diff, duplicate="mean", xo=c(1,2,3))
@@ -199,17 +259,18 @@ gdat <- interp2xyz(s, data.frame=TRUE)
 plot.Jad2040= ggplot(gdat) + 
   aes(x = x, y = y, z = z, fill = z) + 
   geom_tile() + 
-  scale_fill_distiller(palette="Spectral", na.value="white", name="DOY adult") +
-  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")+annotate("text", x=1,y=3000, label= "2011-2040", size=5)
+  scale_fill_distiller(palette="Spectral", na.value="white", name="doy") +
+  theme_classic(base_size=16)+xlab("")+ylab("elevation (m)")+theme(legend.position="bottom")+labs(title= expression(paste(Delta, " from baseline")) )+
+  theme(plot.title = element_text(size = 16))
 
 #-------------------------------
 #Tpup
 #Tpup by gen
-phen1= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) ) 
+phen1= cbind(pts.sel, t(pup.temps["Tpup",yr.inds,,1]) ) 
 phen1$gen=1
-phen2= cbind(pts.sel, t(pup.temps["Tpup",inds,,2]) ) 
+phen2= cbind(pts.sel, t(pup.temps["Tpup",yr.inds,,2]) ) 
 phen2$gen=2
-phen3= cbind(pts.sel, t(pup.temps["Tpup",inds,,3]) ) 
+phen3= cbind(pts.sel, t(pup.temps["Tpup",yr.inds,,3]) ) 
 phen3$gen=3
 phen= rbind(phen1, phen2, phen3)
 
@@ -253,8 +314,9 @@ gdat <- interp2xyz(s, data.frame=TRUE)
 plot.Tpup= ggplot(gdat) + 
   aes(x = x, y = y, z = z, fill = z) + 
   geom_tile() + 
-  scale_fill_distiller(palette="Spectral", na.value="white", name="Tpup (°C)") +
-  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")
+  scale_fill_distiller(palette="Spectral", na.value="white", name="Tpupal (°C)") +
+  theme_classic(base_size=16)+xlab(NULL)+ylab(NULL)+theme(legend.position="bottom")+labs(title= "")+
+  theme(legend.margin=margin(-6,0,0,0) )+theme(axis.title.x=element_blank())
 #----------------
 #remove anomolous sites with large temp declines to prevent legend issues
 s=interp(x=phen2040$gen,y=phen2040$elev,z=phen2040$Tpup_diff, duplicate="mean", xo=c(1,2,3))
@@ -264,18 +326,18 @@ gdat <- interp2xyz(s, data.frame=TRUE)
 plot.Tpup2040= ggplot(gdat) + 
   aes(x = x, y = y, z = z, fill = z) + 
   geom_tile() + 
-  scale_fill_distiller(palette="Spectral", na.value="white", name="Tpup (°C)", limits=c(-1.11,2.6) ) +
-  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")
+  scale_fill_distiller(palette="Spectral", na.value="white", name="Tpupal (°C)", limits=c(-1.11,2.6) ) +
+  theme_classic(base_size=16)+xlab("generation")+ylab(NULL)+theme(legend.position="bottom")+labs(title= "")
 #set limit to omit 1 outlier
 
 #-------------------------------
 #Tad
 #Tad by gen
-phen1= cbind(pts.sel, t(pup.temps["Tad",inds,,1]) ) 
+phen1= cbind(pts.sel, t(pup.temps["Tad",yr.inds,,1]) ) 
 phen1$gen=1
-phen2= cbind(pts.sel, t(pup.temps["Tad",inds,,2]) ) 
+phen2= cbind(pts.sel, t(pup.temps["Tad",yr.inds,,2]) ) 
 phen2$gen=2
-phen3= cbind(pts.sel, t(pup.temps["Tad",inds,,3]) ) 
+phen3= cbind(pts.sel, t(pup.temps["Tad",yr.inds,,3]) ) 
 phen3$gen=3
 phen= rbind(phen1, phen2, phen3)
 
@@ -316,8 +378,9 @@ gdat <- interp2xyz(s, data.frame=TRUE)
 plot.Tad= ggplot(gdat) + 
   aes(x = x, y = y, z = z, fill = z) + 
   geom_tile() + 
-  scale_fill_distiller(palette="Spectral", na.value="white", name="Tad (°C)") +
-  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")
+  scale_fill_distiller(palette="Spectral", na.value="white", name="Tadult (°C)") +
+  theme_classic(base_size=16)+xlab(NULL)+ylab(NULL)+theme(legend.position="bottom")+labs(title= "")+
+  theme(legend.margin=margin(-6,0,0,0) )+theme(axis.title.x=element_blank())
 #----------------
 s=interp(x=phen2040$gen,y=phen2040$elev,z=phen2040$Tad_diff, duplicate="mean", xo=c(1,2,3))
 
@@ -326,16 +389,18 @@ gdat <- interp2xyz(s, data.frame=TRUE)
 plot.Tad2040= ggplot(gdat) + 
   aes(x = x, y = y, z = z, fill = z) + 
   geom_tile() + 
-  scale_fill_distiller(palette="Spectral", na.value="white", name="Tad (°C)") +
-  theme_bw(base_size=16)+xlab("gen")+ylab("elevation (m)")+theme(legend.position="bottom")
+  scale_fill_distiller(palette="Spectral", na.value="white", name="Tadult (°C)") +
+  theme_classic(base_size=16)+xlab("")+ylab(NULL)+theme(legend.position="bottom")+labs(title= "")
 
 #=============================
 
 # plot together
 setwd(paste(fdir,"figures\\", sep=""))
 
-pdf("Fig1_FigJadTpupTad.pdf", height=7, width=10)
-grid.arrange(plot.Jad, plot.Tpup, plot.Tad, plot.Jad2040, plot.Tpup2040, plot.Tad2040, ncol = 3, nrow=2)
+pdf("Fig1_FigJadTpupTad.pdf", height=8, width=12)
+
+plot_grid(plot.Jad, plot.Tpup, plot.Tad, plot.Jad2040, plot.Tpup2040, plot.Tad2040, align = "h", nrow = 2, rel_heights = c(1,1), rel_widths = c(1.2,1,1))
+
 dev.off()
 
   #=====================================================
@@ -345,6 +410,16 @@ dev.off()
   
   abs= seq(0.4,0.7,0.05)
   
+#get legend
+g_legend <-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend) }
+
+#legend limits
+lambda.lims= range(dat, na.rm=TRUE)
+
   for(gen.k in 1:2){
   
 #group by elevation
@@ -393,6 +468,7 @@ dev.off()
   #yrs= c(1950,1980,2010,2040,2070,2100)
   yrs= c(1980,2010,2040,2070)
   yr.cuts= c("1950_1980","2010","2040","2070","2100")
+  yr.labs= c("1950-1980","1981-2010","2011-2040","2041-2070","2071-2100")
   
   for(yr.k in 1:length(yrs)){
     
@@ -404,11 +480,23 @@ dev.off()
     s=interp(fc2$elev,fc2$abs,fc2$lambda, duplicate="mean")
     gdat <- interp2xyz(s, data.frame=TRUE)
     
+    #get legend
+    if(yr.k==1 & gen.k==1){
+      plot.lambda= ggplot(gdat) + 
+        aes(x = x, y = y, z = z, fill = z) + 
+        geom_tile() + 
+        scale_fill_distiller(palette="Spectral", na.value="white", name="lambda", limits=lambda.lims) +theme(legend.position="right")
+      
+      leg = g_legend(plot.lambda)
+}
+          
     plot.lambda= ggplot(gdat) + 
       aes(x = x, y = y, z = z, fill = z) + 
       geom_tile() + 
-      scale_fill_distiller(palette="Spectral", na.value="white", name="lambda") +
-      theme_bw(base_size=16)+xlab("elevation (m)")+ylab("absorptivity")+theme(legend.position="bottom") +annotate("text", x=2000,y=0.68, label= paste(yr.cuts[yr.k],"gen",gen.k,sep=" "), size=5)
+      scale_fill_distiller(palette="Spectral", na.value="white", name="lambda", limits=lambda.lims) +
+      theme_classic(base_size=16)+xlab(NULL)+ylab(NULL)+theme(legend.position="none") +labs(title= paste("generation", gen.k, "\n",yr.labs[yr.k],sep=" "), size=10)
+    
+    if(yr.k>1) plot.lambda= plot.lambda  +labs(title= paste("","\n",yr.labs[yr.k],sep=" "), size=10)
     
     if(yr.k==1 & gen.k==1)plot.lambda1980.g1= plot.lambda
     if(yr.k==2 & gen.k==1)plot.lambda2010.g1= plot.lambda
@@ -423,12 +511,25 @@ dev.off()
   } #end loop years
   } #end loop generation
   
+# +xlab("elevation (m)")+ylab("absorptivity")
+
   #-------------------
+#lay out plots
+
+f1 = plot_grid(plot.lambda1980.g1,plot.lambda2010.g1,plot.lambda2040.g1,plot.lambda2070.g1,plot.lambda1980.g2,plot.lambda2010.g2,plot.lambda2040.g2,plot.lambda2070.g2, ncol = 4, align="v")
+
+f2= grid.arrange(
+  arrangeGrob(f1,  
+              bottom=grid::textGrob(label= "elevation (m)", gp= gpar(fontsize=24, col="black")),
+              left=grid::textGrob(label= "absorptivity", rot=90, gp= gpar(fontsize=24, col="black"))),
+  leg, 
+  widths=c(9,1))
+
+#---
   setwd(paste(fdir,"figures\\",sep="") )
   pdf("Fig2_FitnessCurves_elevs.pdf", height = 7, width = 12)
-  
-  grid_arrange_shared_legend(plot.lambda1980.g1,plot.lambda2010.g1,plot.lambda2040.g1,plot.lambda2070.g1,plot.lambda1980.g2,plot.lambda2010.g2,plot.lambda2040.g2,plot.lambda2070.g2, ncol = 4, nrow = 2)
-  
+  grid.draw(grobTree(rectGrob(gp=gpar(fill="white", lwd=0)), 
+                     f2))
   dev.off()  
   
 #=======================================
@@ -454,6 +555,13 @@ dev.off()
   lgen1= lgen1[,,2:5]
   lgen2= lgen2[,,2:5]
   lgen3= lgen3[,,2:5]
+  
+  #legend limits
+  lambda.lims= c(-1,1)
+  #lambda breaks
+  lambda.breaks=quantile(lambda.diff, probs = seq(0, 1, length.out=7), na.rm=TRUE )
+  
+  scen.labs=  c("plast only", "evol only", "plast + evol", "+ evol of plast")
   
   #--------------
   #flatten array
@@ -508,12 +616,22 @@ dev.off()
       s=interp(fc$year,fc$elev,fc$lambda, duplicate="mean")
       gdat <- interp2xyz(s, data.frame=TRUE)
       
+      #get legend
+      if(scen.k==1 & gen.k==1){
+        plot.lambda= ggplot(gdat) + 
+          aes(x = x, y = y, z = z, fill = z) + 
+          geom_tile() + theme(legend.position="right")+scale_fill_gradientn(colours=brewer.pal(7, "Spectral"),values=rescale(lambda.breaks), guide="colorbar", na.value="white",name="lambda", limits=lambda.lims)
+        
+        leg = g_legend(plot.lambda)
+      }
+      
       plot.lambda= ggplot(gdat) + 
         aes(x = x, y = y, z = z, fill = z) + 
-        geom_tile() + 
-        scale_fill_distiller(palette="Spectral", na.value="white", name="lambda") +
-        theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") +annotate("text", x=2000,y=1500, label= fc$scen.name[1], size=5)
+        geom_tile() +scale_fill_gradientn(colours=brewer.pal(7, "Spectral"),values=rescale(lambda.breaks), guide="colorbar", na.value="white",name="lambda", limits=lambda.lims) +
+        theme_classic(base_size=16)+xlab(NULL)+ylab(NULL)+theme(legend.position="none") +labs(title= paste(scen.labs[scen.k], "\n","generation", gen.k,sep=" "), size=10)
       
+      if(gen.k>1) plot.lambda= plot.lambda  +labs(title= paste("generation", gen.k,sep=" "), size=10)
+  
       if(scen.k==1 & gen.k==1)plot.lambda.scen1.g1= plot.lambda
       if(scen.k==2 & gen.k==1)plot.lambda.scen2.g1= plot.lambda
       if(scen.k==3 & gen.k==1)plot.lambda.scen3.g1= plot.lambda
@@ -528,8 +646,20 @@ dev.off()
     
   } #end loop generation
   
+  #-------------------------
+  #lay out plots
+  
+  f1 = plot_grid(plot.lambda.scen1.g1,plot.lambda.scen2.g1,plot.lambda.scen3.g1,plot.lambda.scen4.g1,plot.lambda.scen1.g2,plot.lambda.scen2.g2,plot.lambda.scen3.g2,plot.lambda.scen4.g2, ncol = 4, align="v")
+  
+  lambda.plot= grid.arrange(
+    arrangeGrob(f1,  
+                bottom=grid::textGrob(label= "year", gp= gpar(fontsize=24, col="black")),
+                left=grid::textGrob(label= "elevation (m)", rot=90, gp= gpar(fontsize=24, col="black"))),
+    leg, 
+    widths=c(9,1))
+  
   #====================================
-  #Compare absorptivities
+#ABSORPTIVITIES
   
   #calculate absorptivity differences by scenario  
   lambda.diff= abs.mean[,,,,2] #use absmid
@@ -547,6 +677,13 @@ dev.off()
   lgen1= lgen1[,,2:5]
   lgen2= lgen2[,,2:5]
   lgen3= lgen3[,,2:5]
+  
+  #abs breaks
+  lambda.diff2<- lambda.diff
+  lambda.diff2[which(abs(lambda.diff2)>0.2) ]<-NA
+  abs.breaks=quantile(lambda.diff2, probs = seq(0, 1, length.out=7), na.rm=TRUE )
+  #abs limits
+  abs.lims= range(lambda.diff2, na.rm=TRUE)
   
   #--------------
   #flatten array
@@ -573,10 +710,12 @@ dev.off()
   l2$scen.name= scens[l2$scen+1]
   l3$scen.name= scens[l3$scen+1]
   
+  scen.labs=  c("plast only", "evol only", "plast + evol", "+ evol of plast")
+  
   #-------------------
   #surface version of figure
   
-  #LAMBDA
+  #ABS
   for(gen.k in 1:1){
     
     if(gen.k==1) fcl=l1
@@ -600,13 +739,23 @@ dev.off()
       #Interpolate
       s=interp(fc$year,fc$elev,fc$abs, duplicate="mean")
       gdat <- interp2xyz(s, data.frame=TRUE)
+     
+      #get legend
+      if(scen.k==1 & gen.k==1){
+        plot.abs= ggplot(gdat) + 
+          aes(x = x, y = y, z = z, fill = z) + 
+          geom_tile() + 
+          scale_fill_gradientn(colours=brewer.pal(7, "Spectral"),values=rescale(abs.breaks), guide="colorbar", na.value="white",name="absorptivity", limits=abs.lims) +theme(legend.position="right")
+        
+        leg = g_legend(plot.abs)
+      }
       
       plot.abs= ggplot(gdat) + 
         aes(x = x, y = y, z = z, fill = z) + 
         geom_tile() + 
-        scale_fill_distiller(palette="Spectral", na.value="white", name="absorptivity") +
-        theme_bw(base_size=16)+xlab("year")+ylab("elevation (m)")+theme(legend.position="bottom") +annotate("text", x=2000,y=1500, label= fc$scen.name[1], size=5)
-      
+        scale_fill_gradientn(colours=brewer.pal(7, "Spectral"),values=rescale(abs.breaks), guide="colorbar", na.value="white",name="absorptivity", limits=abs.lims) +
+        theme_classic(base_size=16)+xlab(NULL)+ylab(NULL)+theme(legend.position="none") +labs(title= scen.labs[scen.k], size=10)
+
       if(scen.k==1 & gen.k==1)plot.abs.scen1.g1= plot.abs
       if(scen.k==2 & gen.k==1)plot.abs.scen2.g1= plot.abs
       if(scen.k==3 & gen.k==1)plot.abs.scen3.g1= plot.abs
@@ -621,21 +770,26 @@ dev.off()
     
   } #end loop generation
   
-  #-------------------
-  setwd(paste(fdir,"figures\\",sep="") )
-  pdf("Fig3_LambdaSurf_scen.pdf", height = 8, width = 12)
-  
-  grid_arrange_shared_legend(plot.lambda.scen1.g1,plot.lambda.scen2.g1,plot.lambda.scen3.g1,plot.lambda.scen4.g1,plot.lambda.scen1.g2,plot.lambda.scen2.g2,plot.lambda.scen3.g2,plot.lambda.scen4.g2, ncol = 4, nrow = 2)
-  
-  dev.off()  
-  
   #-----------------
+  #Absorptivity
+  #lay out plots
+  
+  f1 = plot_grid(frame(),plot.abs.scen2.g1, plot.abs.scen3.g1, plot.abs.scen4.g1, ncol = 4, align="v")
+  
+  abs.plot= grid.arrange(
+    arrangeGrob(f1,  
+                bottom=grid::textGrob(label= "year", gp= gpar(fontsize=24, col="black")),
+                left=grid::textGrob(label= "elevation (m)", rot=90, gp= gpar(fontsize=24, col="black"))),
+    leg, 
+    widths=c(9,1))
+  
+   #-------------------
+ 
   setwd(paste(fdir,"figures\\",sep="") )
-  pdf("Fig3_AbsSurf_scen.pdf", height = 4, width = 9)
-  
-  grid_arrange_shared_legend(plot.abs.scen2.g1, plot.abs.scen3.g1, plot.abs.scen4.g1, ncol = 3, nrow = 1)
-  
-  dev.off() 
+  pdf("Fig3.pdf", height = 8, width = 12)
+  grid.draw(grobTree(rectGrob(gp=gpar(fill="white", lwd=0)), 
+                     grid.arrange(lambda.plot, abs.plot, ncol=1, heights=c(2,1.2) )))
+  dev.off()  
   
 #===============================================
 #MAPS LAMBDA AND ABS RELATIVE TO BASELINE (2010?)
@@ -736,6 +890,8 @@ a.lab= round(a.breaks, digits=2)
 #-------------------------------------------
 #MAP
 
+scen.labs= c("none", "plast only","evol only","plast + evol","+ evol of plast")
+
 for(scen.k in 1:5){
   
   #LAMBDA
@@ -756,28 +912,31 @@ for(scen.k in 1:5){
   lper3= lper3[which(!is.na(lper3$lambda)),]
   lper4= lper4[which(!is.na(lper4$lambda)),]
   
-  #bin
-  lper1$lambda.bins= cut(lper1$lambda, breaks=l.breaks)
-  lper2$lambda.bins= cut(lper2$lambda, breaks=l.breaks)
-  lper3$lambda.bins= cut(lper3$lambda, breaks=l.breaks)
-  lper4$lambda.bins= cut(lper4$lambda, breaks=l.breaks)
-  
   #set up map
   bbox <- ggmap::make_bbox(lon, lat, lper1, f = 0.1)
   map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
   map1=ggmap(map_loc, margins=FALSE)
   
-  #OLD VERSION
-  #lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=l.breaks, labels=l.lab )+ coord_fixed() + theme(legend.position="right")
-
-  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
-
-  lper2.map<- map1 + geom_raster(data=lper2, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
+  #first map
+  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+labs(title= scen.labs[scen.k], size=10)+
+    scale_fill_gradientn(colours=brewer.pal(8, "RdYlBu"),values=rescale(l.breaks), guide="colorbar", na.value="white",name="lambda", limits=range(l.breaks))
   
-  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
+  #get legend
+  l.leg= get_legend(lper1.map)
   
-  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="lambda", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
-  #-------------
+  lper1.map<- lper1.map + theme(legend.position="none")
+  
+  #next maps
+  lper2.map<- map1 + geom_raster(data=lper2, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="none")+xlab(NULL)+ylab(NULL)+labs(title= scen.labs[scen.k], size=10)+
+    scale_fill_gradientn(colours=brewer.pal(8, "RdYlBu"),values=rescale(l.breaks), guide="colorbar", na.value="white",name="lambda", limits=range(l.breaks))
+  
+  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="none")+xlab(NULL)+ylab(NULL)+labs(title= scen.labs[scen.k], size=10)+
+    scale_fill_gradientn(colours=brewer.pal(8, "RdYlBu"),values=rescale(l.breaks), guide="colorbar", na.value="white",name="lambda", limits=range(l.breaks))
+  
+  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="none")+xlab(NULL)+ylab(NULL)+labs(title= scen.labs[scen.k], size=10)+
+    scale_fill_gradientn(colours=brewer.pal(8, "RdYlBu"),values=rescale(l.breaks), guide="colorbar", na.value="white",name="lambda", limits=range(l.breaks))
+
+    #-------------
   
   #ABS
   #Set up data
@@ -797,27 +956,29 @@ for(scen.k in 1:5){
   aper3= aper3[which(!is.na(aper3$abs)),]
   aper4= aper4[which(!is.na(aper4$abs)),]
   
-  #bin
-  aper1$abs.bins= cut(aper1$abs, breaks=a.breaks)
-  aper2$abs.bins= cut(aper2$abs, breaks=a.breaks)
-  aper3$abs.bins= cut(aper3$abs, breaks=a.breaks)
-  aper4$abs.bins= cut(aper4$abs, breaks=a.breaks)
-  
   #set up map
   bbox <- ggmap::make_bbox(lon, lat, aper1, f = 0.1)
   map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
   map1=ggmap(map_loc, margins=FALSE)
 
-#OLD VERSION  
-#  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
+  #first map
+  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+labs(title= scen.labs[scen.k], size=10)+
+    scale_fill_gradientn(colours=brewer.pal(8, "RdYlBu"),values=rescale(a.breaks), guide="colorbar", na.value="white",name="absorptivity", limits=range(a.breaks))
   
-  aper1.map<- map1 + geom_raster(data=aper1, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
+  #get legend
+  a.leg= get_legend(aper1.map)
   
-  aper2.map<- map1 + geom_raster(data=aper2, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
+  aper1.map<- aper1.map + theme(legend.position="none")
   
-  aper3.map<- map1 + geom_raster(data=aper3, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
+  #next maps
+  aper2.map<- map1 + geom_raster(data=aper2, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="none")+xlab(NULL)+ylab(NULL)+labs(title= scen.labs[scen.k], size=10)+
+    scale_fill_gradientn(colours=brewer.pal(8, "RdYlBu"),values=rescale(a.breaks), guide="colorbar", na.value="white",name="absorptivity", limits=range(a.breaks))
   
-  aper4.map<- map1 + geom_raster(data=aper4, aes(fill = abs.bins), alpha=0.5)+ coord_cartesian()+ scale_fill_brewer(name="abs", palette="PuOr")+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+annotate("text", x=-108,y=40, label= scens[scen.k], size=5)
+  aper3.map<- map1 + geom_raster(data=aper3, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="none")+xlab(NULL)+ylab(NULL)+labs(title= scen.labs[scen.k], size=10)+
+    scale_fill_gradientn(colours=brewer.pal(8, "RdYlBu"),values=rescale(a.breaks), guide="colorbar", na.value="white",name="absorptivity", limits=range(a.breaks))
+  
+  aper4.map<- map1 + geom_raster(data=aper4, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="none")+xlab(NULL)+ylab(NULL)+labs(title= scen.labs[scen.k], size=10)+
+    scale_fill_gradientn(colours=brewer.pal(8, "RdYlBu"),values=rescale(a.breaks), guide="colorbar", na.value="white",name="absorptivity", limits=range(a.breaks))
   
   #----------
   if(scen.k==1) {lper1.1=lper1.map; aper1.1=aper1.map;lper2.1=lper2.map; aper2.1=aper2.map; lper3.1=lper3.map; aper3.1=aper3.map; lper4.1=lper4.map; aper4.1=aper4.map}
@@ -828,136 +989,34 @@ for(scen.k in 1:5){
   
 } #end scen loop
 
-#-------------
-#CHECK MAP
-
-#library(fields)
-#quilt.plot(lper1$lon,lper1$lat, lper1$lambda)
-
-#Try interpolation
-aper2.map<- map1 + geom_raster(data=aper2, aes(fill = abs), alpha=0.5)+ coord_cartesian()+ scale_fill_gradientn(colours=matlab.like(10), breaks=a.breaks, labels=a.lab)+ coord_fixed() + theme(legend.position="right")
-
-aper2.map<- map1 + geom_raster(data=aper2, interpolate=TRUE, aes(fill = abs), alpha=0.5)+ coord_cartesian()
-
 #----------------------------
 
-#FIG. 4: ABS MAP
+#FIG. 4 MAPS
+
+#ABS
+f1 = plot_grid(aper3.3,aper3.4,aper3.5, ncol = 3, align="v")
+
+abs.plot= grid.arrange(
+  arrangeGrob(f1,  
+              left=grid::textGrob(label= "latitude (°)", rot=90, gp= gpar(fontsize=18, col="black"))),
+  a.leg, 
+  widths=c(9,1))
+
+#LAMBDA
+f1 = plot_grid(lper3.3,lper3.4,lper3.5, ncol = 3, align="v")
+
+lambda.plot= grid.arrange(
+  arrangeGrob(f1,  
+              bottom=grid::textGrob(label= "longitude (°)", gp= gpar(fontsize=18, col="black")),
+              left=grid::textGrob(label= "latitude (°)", rot=90, gp= gpar(fontsize=18, col="black"))),
+  l.leg, 
+  widths=c(9,1))
+#-------------------
+
 setwd(paste(fdir,"figures\\",sep="") )
-pdf("Fig4_Abs_map.pdf", height = 4, width = 8)
+pdf("Fig4.pdf", height = 6, width = 12)
+grid.draw(grobTree(rectGrob(gp=gpar(fill="white", lwd=0)), 
+                   grid.arrange(abs.plot, lambda.plot, ncol=1, heights=c(1,1.1) )))
+dev.off()  
 
-grid_arrange_shared_legend(aper1.3,aper2.3,aper3.3,aper4.3,aper1.4,aper2.4,aper3.4,aper4.4,aper1.5,aper2.5,aper3.5,aper4.5, ncol = 4, nrow = 3)
-
-dev.off()
-
-# aper1.1,aper2.1,aper3.1,aper4.1,aper1.2,aper2.2,aper3.2,aper4.2,
-
-#grid.newpage()
-#pushViewport(viewport(layout=grid.layout(3,4)))
-#vplayout<-function(x,y)
-#  viewport(layout.pos.row=x,layout.pos.col=y)
-
-#print(aper1.3,vp=vplayout(1,1))
-#print(aper2.3,vp=vplayout(2,1))
-#print(aper3.3,vp=vplayout(3,1))
-#print(aper4.3,vp=vplayout(4,1))
-
-#print(aper1.4,vp=vplayout(1,2))
-#print(aper2.4,vp=vplayout(2,2))
-#print(aper3.4,vp=vplayout(3,2))
-#print(aper4.4,vp=vplayout(4,2))
-
-#print(aper1.5,vp=vplayout(1,3))
-#print(aper2.5,vp=vplayout(2,3))
-#print(aper3.5,vp=vplayout(3,3))
-#print(aper4.5,vp=vplayout(4,3))
-
-#-------------
-#FIG. 5: LAMBDA MAP
-
-pdf("Fig5_Lambda_map.pdf", height = 4, width = 8)
-
-grid_arrange_shared_legend(lper1.3,lper2.3,lper3.3,lper4.3,lper1.4,lper2.4,lper3.4,lper4.4,lper1.5,lper2.5,lper3.5,lper4.5, ncol = 4, nrow = 3)
-
-dev.off()
-
-#lper1.1,lper2.1,lper3.1,lper4.1,lper1.2,lper2.2,lper3.2,lper4.2, 
-
-#======================================================
-#UPDATE MAPS, ABBREVIATE
-
-#FIG. 4: ABS MAP
-setwd(paste(fdir,"figures\\",sep="") )
-pdf("Fig4_Abs_map.pdf", height = 3, width = 12)
-
-grid_arrange_shared_legend(aper3.3,aper3.4,aper3.5, ncol = 3, nrow = 1)
-
-dev.off()
-
-#-------------
-#FIG. 5: LAMBDA MAP
-
-pdf("Fig5_Lambda_map.pdf", height = 3, width = 12)
-
-grid_arrange_shared_legend(lper3.3,lper3.4,lper3.5, ncol = 3, nrow = 1)
-
-dev.off()
-
-#====================================================
-
-#Fig 0. Maps
-#a: color= elevation
-#b: color= Tpupal (1st gen)
-#c: color= DOY adult (1st gen)
-
-#Jadult
-phen1= cbind(pts.sel, t(pup.temps["Jadult",inds,,1]) ) 
-phen1$gen=1
-#extract 1950-1980
-phen1=phen1[,1:(9+31)]
-#mean across years
-phen1$Jadult= rowMeans(phen1[,9:40] )
-
-#Tpupal
-phen2= cbind(pts.sel, t(pup.temps["Tpup",inds,,1]) ) 
-phen2$gen=1
-#extract 1950-1980
-phen2=phen2[,1:(9+31)]
-#mean across years
-phen2$Tpupal= rowMeans(phen2[,9:40] )
-
-#Jadult and Tpupal
-phen= cbind(phen1[,c(1:8)], phen1$Jadult, phen2$Tpupal)
-
-#-----------------
-
-#set up map
-bbox <- ggmap::make_bbox(lon, lat, phen, f = 0.1)
-map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
-map1=ggmap(map_loc, margins=FALSE)
-
-#elevation
-Elev<- map1 + geom_raster(data=phen, aes(fill = elev), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="bottom")+xlab(NULL)+ylab(NULL)+ scale_fill_gradientn(colours=matlab.like(10))+labs(color="Elevation (m)")
-
-#Jadult
-Jadult<- map1 + geom_raster(data=phen, aes(fill = phen1$Jadult), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="bottom")+xlab(NULL)+ylab(NULL)+ scale_fill_gradientn(colours=matlab.like(10))+labs(color="Phenology (doy)")
-
-#Tpupal
-Tpupal<- map1 + geom_raster(data=phen, aes(fill = phen2$Tpupal), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="bottom")+xlab(NULL)+ylab(NULL)+ scale_fill_gradientn(colours=matlab.like(10))+labs(color="Pupal temperature (°C)")
-
-#plot together
-library(cowplot)
-
-setwd(paste(fdir, "figures\\", sep=""))
-pdf("Fig0_map.pdf", height=5, width=12)
-
-plot_grid(Elev, Jadult, Tpupal, align = "h", nrow = 1, rel_heights = c(1))
-
-dev.off()
-
-
-#-------------
-
-
-
-
-
+#=============================================================
