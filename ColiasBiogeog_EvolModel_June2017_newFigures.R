@@ -675,7 +675,7 @@ f2= grid.arrange(
   
   #drop 1st scenario
   lgen1= lgen1[,,2:5]
-  lgen2= lgen2[,,2:5]
+  lgen2= lgen2[,,2:5] 
   lgen3= lgen3[,,2:5]
   
   #abs breaks
@@ -1019,4 +1019,244 @@ grid.draw(grobTree(rectGrob(gp=gpar(fill="white", lwd=0)),
                    grid.arrange(abs.plot, lambda.plot, ncol=1, heights=c(1,1.1) )))
 dev.off()  
 
-#=============================================================
+#********************************************  
+#********************************************  
+#********************************************  
+
+
+
+#FITNESS OVER TIME WITHOUT EVOLUTION
+
+plot(1:150,lambda.diff[,100,1])
+
+#surface plot
+
+
+
+#check data
+sums=colSums(!is.na(lambda.diff[,,1]))
+inds= which(colSums(!is.na(lambda.diff[,,1]))>100)
+drop.inds= which(colSums(!is.na(lambda.diff[,,1]))<100)
+
+#calculate slopes
+
+#*******************************************
+#MAPS LAMBDA AND ABS RELATIVE TO BASELINE (2010?)
+
+#CURRENTLY na.rm=TRUE, change?
+
+#LAMBDA
+#average lambdas across time period
+#first generation
+lambda.diff= lambda.mean[,,1,]
+
+#change erroneous values
+lambda.diff[which(lambda.diff< (-10))]=NA #replacement rate
+lambda.diff[which(lambda.diff> 10)]=NA
+
+# per1= lambda.diff[which(years %in% 1985),,]
+# per2= lambda.diff[which(years %in% 2015),,]
+# per3= lambda.diff[which(years %in% 2045),,]
+# per4= lambda.diff[which(years %in% 2075),,]
+per1= colMeans(lambda.diff[which(years %in% 1951:1980),,], na.rm = TRUE, dims = 1)
+per2= colMeans(lambda.diff[which(years %in% 1981:2010),,], na.rm = TRUE, dims = 1)
+per3= colMeans(lambda.diff[which(years %in% 2011:2040),,], na.rm = TRUE, dims = 1)
+per4= colMeans(lambda.diff[which(years %in% 2041:2070),,], na.rm = TRUE, dims = 1)
+
+#DO NOT translate to difference from no plasticity or evolution
+lper1s= per1
+lper2s= per2
+lper3s= per3
+lper4s= per4
+
+#----------
+
+#determine breaks
+l.break= rbind(lper1s, lper2s, lper3s, lper4s)
+l.breaks= quantile(l.break, probs=seq(0,1,0.25), na.rm=TRUE) #c(-10,0,1,2,3,10)  #
+
+
+#-------------------------------------------
+#MAP
+
+scen.k=1
+  
+  #LAMBDA
+  #Set up data
+  lper1= cbind(pts.sel, lper1s[,scen.k])
+  lper2= cbind(pts.sel, lper2s[,scen.k])
+  lper3= cbind(pts.sel, lper3s[,scen.k])
+  lper4= cbind(pts.sel, lper4s[,scen.k])
+  
+  names(lper1)[9]="lambda"
+  names(lper2)[9]="lambda"
+  names(lper3)[9]="lambda"
+  names(lper4)[9]="lambda"
+  
+  #drop low counts
+#  lper1= lper1[inds,]
+#  lper2= lper2[inds,]
+#  lper3= lper3[inds,]
+#  lper4= lper4[inds,]
+  
+  #omit NAs
+  lper1= lper1[which(!is.na(lper1$lambda)),]
+  lper2= lper2[which(!is.na(lper2$lambda)),]
+  lper3= lper3[which(!is.na(lper3$lambda)),]
+  lper4= lper4[which(!is.na(lper4$lambda)),]
+  
+  #set up map
+  bbox <- ggmap::make_bbox(lon, lat, lper1, f = 0.1)
+  map_loc <- get_map(location = bbox, source = 'google', maptype = 'terrain')
+  map1=ggmap(map_loc, margins=FALSE)
+  
+  cols= c("darkblue","blue","yellow","orange","red")
+  
+  #first map
+  lper1.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+labs(title= "1950-1980", size=10)+
+    scale_fill_gradientn(colours=cols,values=rescale(l.breaks), guide="colorbar", na.value="white",name="lambda", limits=range(l.breaks))
+
+    #    scale_fill_gradientn(colours=cols,values=rescale(l.breaks), guide="colorbar", na.value="white",name="lambda", limits=range(l.breaks))
+  
+#  lper1.map<- map1 + geom_raster(data=lper1, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="right")+xlab(NULL)+ylab(NULL)+labs(title= "1950-1980", size=10)+    scale_fill_gradientn(colours=brewer.pal(8, "YlOrRd"),values=rescale(l.breaks), guide="colorbar", na.value="white",name="lambda", limits=range(l.breaks))
+  
+  #get legend
+  l.leg= get_legend(lper1.map)
+  
+  lper1.map<- lper1.map + theme(legend.position="none")
+  
+  #next maps
+  lper2.map<- map1 + geom_raster(data=lper2, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="none")+xlab(NULL)+ylab(NULL)+labs(title= "1981-2010", size=10)+
+    scale_fill_gradientn(colours=cols,values=rescale(l.breaks), guide="colorbar", na.value="white",name="lambda", limits=range(l.breaks))
+  
+  lper3.map<- map1 + geom_raster(data=lper3, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="none")+xlab(NULL)+ylab(NULL)+labs(title= "2011-2040", size=10)+
+    scale_fill_gradientn(colours=cols,values=rescale(l.breaks), guide="colorbar", na.value="white",name="lambda", limits=range(l.breaks))
+  
+  lper4.map<- map1 + geom_raster(data=lper4, aes(fill = lambda), alpha=0.5)+ coord_cartesian()+ coord_fixed() + theme(legend.position="none")+xlab(NULL)+ylab(NULL)+labs(title= "2041-2070", size=10)+
+    scale_fill_gradientn(colours=cols,values=rescale(l.breaks), guide="colorbar", na.value="white",name="lambda", limits=range(l.breaks))
+  
+  
+  lper1.1=lper1.map; lper2.1=lper2.map; lper3.1=lper3.map; lper4.1=lper4.map
+  
+  #elevation plots
+  ggplot(lper4) + aes(x = elev, y = lambda)+geom_point()
+
+
+#----------------------------
+
+#FIG. FITNESS THROUGH TIME
+
+#LAMBDA
+f1 = plot_grid(lper1.1,lper2.1,lper3.1, lper4.1, ncol = 2, align="v")
+
+lambda.plot= grid.arrange(
+  arrangeGrob(f1,  
+              bottom=grid::textGrob(label= "longitude (°)", gp= gpar(fontsize=18, col="black")),
+              left=grid::textGrob(label= "latitude (°)", rot=90, gp= gpar(fontsize=18, col="black"))),
+  l.leg, 
+  widths=c(9,1))
+#-------------------
+
+setwd(paste(fdir,"figures\\",sep="") )
+pdf("FigLambda_Scen1.pdf", height = 12, width = 12)
+grid.draw(grobTree(rectGrob(gp=gpar(fill="white", lwd=0)), 
+                   grid.arrange(lambda.plot, ncol=1, heights=c(1,1.1) )))
+dev.off()  
+
+#---------------------------------------
+#  abs.mean #dims: yr.k, cell.k, gen.k, scen.k:no plast, plast, only plast, metrics: abssample, absmid, rn, Babsmid, Brn)
+#  lambda.mean= array(NA, dim=c(length(years),nrow(pts.sel), 3, 5)) #dims: yr.k, cell.k, gen.k, scen.k
+# scen.k: plast0evol0, plast1evol0, plast0evol1, plast1evol1, plast1evol1rnevol1
+
+#calculate fitness differences by scenario
+#no plast or evol
+lambda.diff= lambda.mean[,,,2 ]
+
+#separate generations
+lgen1= lambda.diff[,,1]
+lgen2= lambda.diff[,,2]
+lgen3= lambda.diff[,,3]
+
+#lambda breaks
+lambda.breaks=quantile(lambda.diff, probs = seq(0, 1, length.out=7), na.rm=TRUE )
+
+#scen.labs=  c("plast only", "evol only", "plast + evol", "+ evol of plast")
+scen.labs=  c("plast only")
+
+#--------------
+#flatten array
+l1= array2df(lgen1)
+colnames(l1)=c("lambda","year","site")
+l2= array2df(lgen2)
+colnames(l2)=c("lambda","year","site")
+l3= array2df(lgen3)
+colnames(l3)=c("lambda","year","site")
+
+#add elevation
+l1$elev= pts.sel$elev[l1$site]
+l2$elev= pts.sel$elev[l2$site]
+l3$elev= pts.sel$elev[l3$site]
+
+#add year
+l1$year= years[l1$year]
+l2$year= years[l2$year]
+l3$year= years[l3$year]
+
+#-------------------
+#surface version of figure
+
+#LAMBDA
+#for(gen.k in 1:2){
+gen.k=1
+scen.k=1
+  
+  if(gen.k==1) fcl=l1
+  if(gen.k==2) fcl=l2
+  
+   #drop outliers
+    fc= fcl[which(fcl$lambda> (-1) & fcl$lambda< 10),]
+    
+    #drop NA lambdas
+    fc= fc[which(!is.na(fc$lambda)),]
+    
+    #sample
+    if(nrow(fc)>50000 ) inds= base::sample(1:nrow(fc),50000, replace=FALSE)
+    fc=fc[inds,]
+    
+    #Interpolate
+    s=interp(fc$year,fc$elev,fc$lambda, duplicate="mean")
+    gdat <- interp2xyz(s, data.frame=TRUE)
+  
+    
+    #----------------  
+    #get legend
+   
+    plot.lambda= ggplot(gdat) + 
+      aes(x = x, y = y, z = z, fill = z) + 
+      geom_tile() + theme(legend.position="right")+ 
+      scale_fill_distiller(palette="Spectral", na.value="white", name="lambda")+
+      theme_classic(base_size=16)+xlab("year")+ylab("Elevation (m)")
+    
+    #+scale_fill_gradientn(colours=brewer.pal(7, "YlOrRd"), values=rescale(lambda.breaks), guide="colorbar", na.value="white",name="lambda")
+    
+    
+    #elevation plots
+    lper1$time.per= "1950-1980"
+    lper2$time.per= "1981-2010"
+    lper3$time.per= "2011-2040"
+    lper4$time.per= "2041-2070"
+    
+    lelev= rbind(lper1,lper2, lper3, lper4)
+    
+    l.elev= ggplot(lelev) + aes(x = elev, y = lambda)+geom_point()+facet_wrap(~time.per,nrow=2)+geom_smooth(color="gray")+ geom_vline(xintercept=2400, color="gray")+xlab("Elevation (m)")+ylab("Lambda")
+
+    #-------------------
+    
+    setwd(paste(fdir,"figures\\",sep="") )
+    pdf("FigLambda_Scen2.pdf", height = 6, width = 12)
+    
+    #combine
+    plot_grid(plot.lambda, l.elev, labels = c("A", "B"))
+    dev.off()  
+    
+    
