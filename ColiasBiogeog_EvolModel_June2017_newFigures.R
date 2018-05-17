@@ -27,14 +27,16 @@ years= 1950:2099
 #-----------------------------
 #Load data
     
-fdir= "C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\"
+#fdir= "C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\"
+fdir= "/Volumes/GoogleDrive/My\ Drive/Buckley/Work/ColiasBiogeog/" 
 
 #Read points
-setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+#setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+setwd("/Volumes/GoogleDrive/My\ Drive/Buckley/Work/ColiasBiogeog/OUT/")
 pts.sel= read.csv( paste("COpoints.csv", sep="") ) #_",projs[proj.k],"
   
 #Read lambdas and pupal temps
-setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+#setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 #previous version
 #setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\3gen_rds")
 
@@ -54,7 +56,7 @@ yr.inds=1:150
 
 #--------------------------
 #Read optimal absorptivity
-setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+#setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 abs.opt <- readRDS( paste("abs.opt_",projs[proj.k],".rds", sep="") )
 
 #***************************************
@@ -165,7 +167,7 @@ Tpupal<- map1 + geom_raster(data=phen, aes(fill = phen2$Tpupal), alpha=0.5)+ coo
 #plot together
 library(cowplot)
 
-setwd(paste(fdir, "figures\\", sep=""))
+setwd(paste(fdir, "figures/", sep=""))
 pdf("Fig0_map.pdf", height=8, width=12)
 
 plot_grid(Elev, Jadult, Tpupal, align = "h", ncol = 3, rel_widths = c(1.1,1,1))
@@ -395,7 +397,7 @@ plot.Tad2040= ggplot(gdat) +
 #=============================
 
 # plot together
-setwd(paste(fdir,"figures\\", sep=""))
+setwd(paste(fdir,"figures/", sep=""))
 
 pdf("Fig1_FigJadTpupTad.pdf", height=8, width=12)
 

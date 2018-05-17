@@ -19,7 +19,8 @@ library(akima) #for interpolation
 library(scales)
 #-----------------------------
     
-fdir= "C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\"
+#fdir= "C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\"
+fdir= "/Volumes/GoogleDrive/My\ Drive/Buckley/Work/ColiasBiogeog/" 
 
 #pick projection
 proj.k=2
@@ -61,11 +62,13 @@ a.fit= as.data.frame(seq(0.4,0.7,0.01))
 names(a.fit)="a"
 
 #Read points
-setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+#setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+setwd("/Volumes/GoogleDrive/My\ Drive/Buckley/Work/ColiasBiogeog/OUT/") #mac version
+
 pts.sel= read.csv( paste("COpoints.csv", sep="") ) #_",projs[proj.k],"
   
 #Read lambdas and pupal temps
-setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+#setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
 #previous version
 #setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\3gen_rds")
 
@@ -121,7 +124,8 @@ for(yr.k in 1:length(years)) {
 } #end year loop
 
 #save optimal Alphas
-setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+#setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+setwd("/Volumes/GoogleDrive/My\ Drive/Buckley/Work/ColiasBiogeog/OUT/") #mac version
 
 #saveRDS(abs.opt, paste("abs.opt_",projs[proj.k],".rds", sep=""))
 abs.opt <- readRDS( paste("abs.opt_",projs[proj.k],".rds", sep="") )
@@ -335,7 +339,8 @@ if(scen.k==5) abs.mean[yr.k,l.no.na,gen.k,scen.k,"Brn"]= BetaRN
 #Save output
 #_reg for regression 
 
-setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+#setwd("C:\\Users\\Buckley\\Google Drive\\Buckley\\Work\\ColiasBiogeog\\OUT\\")
+setwd("/Volumes/GoogleDrive/My\ Drive/Buckley/Work/ColiasBiogeog/OUT/") #mac version
 
 #saveRDS(abs.mean, "absmean.abs")
 #saveRDS(lambda.mean, "lambdamean.abs")
