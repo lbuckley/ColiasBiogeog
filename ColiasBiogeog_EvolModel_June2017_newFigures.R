@@ -319,6 +319,7 @@ plot.Tpup= ggplot(gdat) +
   scale_fill_distiller(palette="Spectral", na.value="white", name="Tpupal (°C)") +
   theme_classic(base_size=16)+xlab(NULL)+ylab(NULL)+theme(legend.position="bottom")+labs(title= "")+
   theme(legend.margin=margin(-6,0,0,0) )+theme(axis.title.x=element_blank())
+
 #----------------
 #remove anomolous sites with large temp declines to prevent legend issues
 s=interp(x=phen2040$gen,y=phen2040$elev,z=phen2040$Tpup_diff, duplicate="mean", xo=c(1,2,3))
@@ -420,6 +421,7 @@ g_legend <-function(a.gplot){
   return(legend) }
 
 #legend limits
+dat= Lambda[,,,,1]
 lambda.lims= range(dat, na.rm=TRUE)
 
   for(gen.k in 1:2){
@@ -528,7 +530,7 @@ f2= grid.arrange(
   widths=c(9,1))
 
 #---
-  setwd(paste(fdir,"figures\\",sep="") )
+  setwd(paste(fdir,"figures/",sep="") )
   pdf("Fig2_FitnessCurves_elevs.pdf", height = 7, width = 12)
   grid.draw(grobTree(rectGrob(gp=gpar(fill="white", lwd=0)), 
                      f2))
@@ -787,7 +789,7 @@ f2= grid.arrange(
   
    #-------------------
  
-  setwd(paste(fdir,"figures\\",sep="") )
+  setwd(paste(fdir,"figures/",sep="") )
   pdf("Fig3.pdf", height = 8, width = 12)
   grid.draw(grobTree(rectGrob(gp=gpar(fill="white", lwd=0)), 
                      grid.arrange(lambda.plot, abs.plot, ncol=1, heights=c(2,1.2) )))
@@ -1015,7 +1017,7 @@ lambda.plot= grid.arrange(
   widths=c(9,1))
 #-------------------
 
-setwd(paste(fdir,"figures\\",sep="") )
+setwd(paste(fdir,"figures/",sep="") )
 pdf("Fig4.pdf", height = 6, width = 12)
 grid.draw(grobTree(rectGrob(gp=gpar(fill="white", lwd=0)), 
                    grid.arrange(abs.plot, lambda.plot, ncol=1, heights=c(1,1.1) )))
@@ -1112,11 +1114,11 @@ scen.k=1
     
     lelev= rbind(lper1,lper2, lper3, lper4)
     
-    l.elev= ggplot(lelev) + aes(x = elev, y = lambda)+geom_point()+facet_wrap(~time.per,nrow=2)+geom_smooth(color="gray")+ geom_vline(xintercept=2400, color="gray")+xlab("Elevation (m)")+ylab("Lambda")
+    l.elev= ggplot(lelev) + aes(x = elev, y = lambda)+geom_point()+facet_wrap(~time.per,nrow=2)+geom_smooth(color="gray")+ geom_vline(xintercept=2400, color="gray")+xlab("Elevation (m)")+ylab("Lambda")+ylim(0,2.5)
 
     #-------------------
     
-    setwd(paste(fdir,"figures\\",sep="") )
+    setwd(paste(fdir,"figures/",sep="") )
     pdf("FigLambda_Scen2.pdf", height = 6, width = 12)
     
     #combine
