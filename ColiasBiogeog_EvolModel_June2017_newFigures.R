@@ -720,7 +720,7 @@ f2= grid.arrange(
   #surface version of figure
   
   #ABS
-  for(gen.k in 1:1){
+  for(gen.k in 1:2){
     
     if(gen.k==1) fcl=l1
     if(gen.k==2) fcl=l2
@@ -777,6 +777,9 @@ f2= grid.arrange(
   #-----------------
   #Absorptivity
   #lay out plots
+  
+ ## check generation effect 
+ # plot_grid(plot.abs.scen4.g1, plot.abs.scen4.g2)
   
   f1 = plot_grid(frame(),plot.abs.scen2.g1, plot.abs.scen3.g1, plot.abs.scen4.g1, ncol = 4, align="v")
   
@@ -1036,7 +1039,7 @@ drop.inds= which(colSums(!is.na(lambda.diff[,,1]))<100)
 
 #calculate fitness differences by scenario
 #no plast or evol
-lambda.diff= lambda.mean[,,,2 ]
+lambda.diff= lambda.mean[,,,1 ]
 
 #separate generations
 lgen1= lambda.diff[,,1]
@@ -1069,11 +1072,11 @@ l2$year= years[l2$year]
 l3$year= years[l3$year]
 
 #-------------------
+#Figure 5
 #surface version of figure
 
 #LAMBDA
-#for(gen.k in 1:2){
-gen.k=1
+for(gen.k in 1:2){
 scen.k=1
   
   if(gen.k==1) fcl=l1
@@ -1092,19 +1095,49 @@ scen.k=1
     #Interpolate
     s=interp(fc$year,fc$elev,fc$lambda, duplicate="mean")
     gdat <- interp2xyz(s, data.frame=TRUE)
-  
     
-    #----------------  
-    #get legend
-   
     plot.lambda= ggplot(gdat) + 
       aes(x = x, y = y, z = z, fill = z) + 
       geom_tile() + theme(legend.position="right")+ 
-      scale_fill_distiller(palette="Spectral", na.value="white", name="lambda")+
-      theme_classic(base_size=16)+xlab("year")+ylab("Elevation (m)")
+     scale_fill_distiller(palette="Spectral", na.value="white", name="lambda")+
+      theme_classic(base_size=16)+xlab("year")+ylab("Elevation (m)")+
+  #  scale_fill_gradientn(colours=brewer.pal(7, "YlOrRd"), values=rescale(lambda.breaks), guide="colorbar", na.value="white",name="lambda")
     
-    #+scale_fill_gradientn(colours=brewer.pal(7, "YlOrRd"), values=rescale(lambda.breaks), guide="colorbar", na.value="white",name="lambda")
+    if(gen.k==1) plot.lambda1= plot.lambda
+    if(gen.k==2) plot.lambda2= plot.lambda
     
+} #end gen loop
+    
+    #=============================
+ 
+    #Elevation scatter plots
+    
+    for(gen.k in 1:2){
+    
+    #LAMBDA
+    #average lambdas across time period
+    #first generation and first scenario
+    lambda.diff= lambda.mean[,,gen.k,1]
+    
+    #change erroneous values
+    lambda.diff[which(lambda.diff< (-10))]=NA
+    lambda.diff[which(lambda.diff> 10)]=NA
+    
+    per1= colMeans(lambda.diff[which(years %in% 1951:1980),], na.rm = TRUE, dims = 1)
+    per2= colMeans(lambda.diff[which(years %in% 1981:2010),], na.rm = TRUE, dims = 1)
+    per3= colMeans(lambda.diff[which(years %in% 2011:2040),], na.rm = TRUE, dims = 1)
+    per4= colMeans(lambda.diff[which(years %in% 2041:2070),], na.rm = TRUE, dims = 1)
+    
+    #Set up data
+    lper1= cbind(pts.sel, per1)
+    lper2= cbind(pts.sel, per2)
+    lper3= cbind(pts.sel, per3)
+    lper4= cbind(pts.sel, per4)
+    
+    names(lper1)[9]="lambda"
+    names(lper2)[9]="lambda"
+    names(lper3)[9]="lambda"
+    names(lper4)[9]="lambda"
     
     #elevation plots
     lper1$time.per= "1950-1980"
@@ -1112,17 +1145,24 @@ scen.k=1
     lper3$time.per= "2011-2040"
     lper4$time.per= "2041-2070"
     
+    #plot
     lelev= rbind(lper1,lper2, lper3, lper4)
     
-    l.elev= ggplot(lelev) + aes(x = elev, y = lambda)+geom_point()+facet_wrap(~time.per,nrow=2)+geom_smooth(color="gray")+ geom_vline(xintercept=2400, color="gray")+xlab("Elevation (m)")+ylab("Lambda")+ylim(0,2.5)
+    l.elev= ggplot(lelev) + aes(x = elev, y = lambda)+geom_point()+facet_wrap(~time.per,nrow=2)+geom_smooth(color="gray")+ geom_vline(xintercept=2400, color="gray")+xlab("Elevation (m)")+ylab("Lambda")
 
+    if(gen.k==1)l.elev1=l.elev
+    if(gen.k==2)l.elev2=l.elev
+    
+    } #end gen.k loop
     #-------------------
     
     setwd(paste(fdir,"figures/",sep="") )
-    pdf("FigLambda_Scen2.pdf", height = 6, width = 12)
+    pdf("FigLambda_Scen1.pdf", height = 10, width = 12)
     
     #combine
-    plot_grid(plot.lambda, l.elev, labels = c("A", "B"))
+    plot_grid(l.elev1, plot.lambda1, l.elev2, plot.lambda2, labels = c("A generation 1","B generation 1","C generation 2","D generation 2"), nrow=2, label_size=12, rel_widths = c(1,0.8))
     dev.off()  
+    
+    #----------------------
     
     
