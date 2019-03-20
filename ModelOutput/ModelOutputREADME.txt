@@ -1,0 +1,2 @@
+Model output including grid cells (Copoints.csv), fitness predictions (labda1_....rds), and pupal temperature are related estimates (PupTemps_...rds). See ColiasBiogeog_EvolModel_June2017_newFigures.R for formatting information and to make plots.
+Dimensions of .rds files:Lambda1: years2: grid cells3: absorptivity4: generation5: metrics: Lambda, FAT,Egg ViabilityPupTemps1: metrics: "stat","yr","gen","Jlarv", "Jpup","Jadult","Tlarv","Tpup","Tad","Tlarv_fixed","Tpup_fixed","Tad_fixed"2: years3: grid cells4: generation  
